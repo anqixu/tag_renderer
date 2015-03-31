@@ -7,20 +7,58 @@ from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import sys
 import math
+import numpy
 import Image
+import cv2
 
 FOVY_DEG = 45.0
-
-ESCAPE = '\033'
-
-window = 0
 
 xrot = yrot = zrot = 0.0
 xtran = 0.0
 ytran = 0.0
 ztran = -2.0
 
-texture = 0
+
+def GenCalibParams(fovy_deg, width_px, height_px, alpha=0.0):
+  # OpenGL projection matrix (x/y/homogeneous components only, from eye frame to normalized near plane)
+  # J = [fx  0  0
+  #       0 fy  0
+  #       0  0  1]
+  focal_length_y = 1.0/math.tan(math.radians(float(fovy_deg))/2.0)
+  #focal_length_x = focal_length_y/width_px*height_px
+  
+  # Camera intrinsic matrix
+  # X = [w/2   0 w/2
+  #        0 h/2 h/2
+  #        0   0   1]
+  #
+  # K = X * J = [  v  0 w/2
+  #                0  v h/2
+  #                0  0   1]
+  # where v = fy*h/2
+  focal_length_y_px = focal_length_y*height_px/2.
+  intrinsics_mat = numpy.zeros((3, 3), numpy.float64)
+  intrinsics_mat[0, 0] = focal_length_y_px
+  intrinsics_mat[1, 1] = focal_length_y_px
+  intrinsics_mat[0, 2] = float(width_px)/2.
+  intrinsics_mat[1, 2] = float(height_px)/2.
+  
+  # Zero-distortion coefficients for plumb bob model
+  distortion_vec = numpy.zeros((1, 5), numpy.float64)
+  
+  # Default rectification matrix for monocular camera = identify
+  rectification_mat = numpy.eye(3, dtype=numpy.float64)
+
+  # Projection matrix (from homogeneous 3D world coordinate to distortion-non-corrected 2D pixel coordinate)
+  # alpha = 0.: after correcting for distortion, all pixels in resulting image are valid
+  # alpha = 1.: all pixels in source, distortion-non-corrected image are visible, but so might be some black borders
+  projection_mat = numpy.zeros((3, 4), numpy.float64)
+  new_intrinsics_mat, _ = cv2.getOptimalNewCameraMatrix(intrinsics_mat, distortion_vec, (width_px, height_px), alpha)
+  for j in range(3):
+    for i in range(3):
+      projection_mat[j, i] = new_intrinsics_mat[j, i]
+  
+  return (intrinsics_mat, distortion_vec, rectification_mat, projection_mat)
 
 
 def LoadTextures():
@@ -32,22 +70,22 @@ def LoadTextures():
     image = image.convert("RGBX").tostring("raw", "RGBX", 0, -1)
   
     # Create Texture
-    glBindTexture(GL_TEXTURE_2D, glGenTextures(1)) # 2d texture (x and y size)
+    texture = glGenTextures(1)
+    glBindTexture(GL_TEXTURE_2D, texture) # 2-D texture (x and y size)
   
-    glPixelStorei(GL_UNPACK_ALIGNMENT,1)
+    #glPixelStorei(GL_UNPACK_ALIGNMENT, 1) # Read pixels in byte-aligned manner (vs default of word-aligned manner)
     glTexImage2D(GL_TEXTURE_2D, 0, 3, ix, iy, 0, GL_RGBA, GL_UNSIGNED_BYTE, image)
     
+
+def InitGL(width, height):
+    LoadTextures()
+
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP) # Clamp texture at borders instead ...
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP) # ... of mirror or replicating
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) # Slower than GL_NEAREST, but more accurate blending
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) # Ideally want to use GL_LINEAR_MIPMAP_LINEAR, but does not work in software Linux renderer
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL) # Use image's color instead of blending with surface (lighting)
 
-
-def InitGL(width, height):
-    aspect_ratio = float(width)/float(height)
-  
-    LoadTextures()
     glEnable(GL_CULL_FACE) # Use single-faced geometry (front- & back-face culling) to display white tag back
 
     glClearColor(0.0, 0.0, 0.0, 0.0) # Set black background
@@ -58,39 +96,8 @@ def InitGL(width, height):
   
     glMatrixMode(GL_PROJECTION)
     glLoadIdentity()
-    gluPerspective(FOVY_DEG, aspect_ratio, 0.1, 10.0)
-    
-    model = glGetFloatv(GL_PROJECTION_MATRIX)
-    print model
-    
-    fy = 1.0/math.tan(math.radians(FOVY_DEG)/2)
-    fx = fy/aspect_ratio
-
-    print "opengl xy-projection matrix\n[%.2f\t%.2f\t%.2f\n %.2f\t%.2f\t%.2f\n 0.00\t0.00\t1.00]" % (fx, 0, 0, 0, fy, 0)
-    print "camera matrix\n[%.2f\t%.2f\t%.2f\n %.2f\t%.2f\t%.2f\n 0.00\t0.00\t1.00]" % (fx*width/2., 0, width/2.0, 0, fy*height/2., height/2.0)
-    
-    
-    '''
-    
-    self.distortion = numpy.zeros((5, 1), numpy.float64)
-     self.intrinsics[0,0] = 1.0
-        self.intrinsics[1,1] = 1.0
-        cv2.calibrateCamera(
-                   opts, ipts,
-                   self.size, self.intrinsics,
-                   self.distortion,
-                   flags = self.calib_flags)
-            self.R = numpy.eye(3, dtype=numpy.float64)
-        self.P = numpy.zeros((3, 4), dtype=numpy.float64)
-        
-    lrost(distortion, intrinsics, R, P) -> (d, k, r, p) -> (distortion, camera, rectification, projection)
-    
-    
-            ncm, _ = cv2.getOptimalNewCameraMatrix(self.intrinsics, self.distortion, self.size, a)
-        for j in range(3):
-            for i in range(3):
-                self.P[j,i] = ncm[j, i]
-    '''
+    gluPerspective(FOVY_DEG, float(width)/float(height), 0.1, 10.0)
+    #print glGetFloatv(GL_PROJECTION_MATRIX)
 
     glMatrixMode(GL_MODELVIEW)
 
@@ -108,11 +115,11 @@ def ReSizeGLScene(width, height):
     
 
 def DrawGLScene():
-  global xrot, yrot, zrot, xtran, ytran, ztran, texture
+  global xrot, yrot, zrot, xtran, ytran, ztran
 
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Clear screen and depth buffers
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Clear color and depth buffers
   
-  # Apply transformations
+  # Apply translation and rotation to GL_MODELVIEW
   glLoadIdentity()
   glTranslatef(xtran, ytran, ztran)
   glRotatef(xrot,1.0,0.0,0.0)
@@ -159,7 +166,7 @@ def keyPressed(*args):
     global xrot, yrot, zrot, xtran, ytran, ztran
   
     # If escape is pressed, kill everything.
-    if args[0] == ESCAPE:
+    if args[0] == '\033' or args[0] == 'x': # ESC
       sys.exit()
     elif args[0] == '4':
       xtran -= 0.1
@@ -170,22 +177,25 @@ def keyPressed(*args):
     elif args[0] == '8':
       ytran += 0.1
     elif args[0] == '3':
-      ztran -= 0.1
+      ztran -= 1
     elif args[0] == '9':
-      ztran += 0.1
-    elif args[0] == 'r':
+      ztran += 1
+    elif args[0] == '7':
+      zrot += 15.0
+    elif args[0] == '1':
+      zrot -= 15.0
+    elif args[0] == '5':
       xrot = 0.
       yrot = 0.
       zrot = 0.
       xtran = 0.
       ytran = 0.
-      ztran = -1.
+      ztran = -2.
     else:
       print args[0]
 
 
 def main():
-  global window
   glutInit(sys.argv)
 
   glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH)
@@ -202,10 +212,9 @@ def main():
   glutKeyboardFunc(keyPressed)
 
   InitGL(640, 480)
-
+  
   glutMainLoop()
   
 
 if __name__ == "__main__":
-  print "Hit ESC key to quit."
   main()
