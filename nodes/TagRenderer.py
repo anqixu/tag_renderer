@@ -10,6 +10,7 @@ import math
 import numpy
 import Image
 import cv2
+import time
 
 FOVY_DEG = 45.0
 
@@ -114,7 +115,7 @@ def ReSizeGLScene(width, height):
     glMatrixMode(GL_MODELVIEW)
     
 
-def DrawGLScene(double_buffering = True):
+def DrawGLScene():
   global xrot, yrot, zrot, xtran, ytran, ztran
 
   glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Clear color and depth buffers
@@ -158,29 +159,7 @@ def DrawGLScene(double_buffering = True):
   #if ztran < -10:
   #  ztran = -1.0
 
-  if double_buffering:
-    glutSwapBuffers()
-  else:
-    glFlush()
-
-flag=False
-def RenderAndReadGLScene():
-  global flag
-  
-  if flag:
-    DrawGLScene(False)
-    return
-    
-  width=640
-  height=480
-  
-  DrawGLScene(False)
-  buf = glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE)
-  image = Image.fromstring(mode="RGB", size=(width, height), data=buf)
-  image = image.transpose(Image.FLIP_TOP_BOTTOM)
-  image.save("frame.png", "PNG")
-
-  flag = True
+  glutSwapBuffers()
   
 
 # The function called whenever a key is pressed. Note the use of Python tuples to pass in: (key, x, y)  
@@ -215,12 +194,41 @@ def keyPressed(*args):
       ztran = -2.
     else:
       print args[0]
+      
+      
+t = None
+f = 0
+def Idle():
+  global t, f
+  DrawGLScene()
+  now = time.time()
+  if (t is None or (now - t) > 1.0) and f < 9:
+    t = now
+    f += 1
+    
+    buff = glGetIntegerv(GL_READ_BUFFER)
+    if buff == GL_BACK:
+      print "glReadPixels reads from: GL_BACK"
+    elif buff == GL_FRONT:
+      print "glReadPixels reads from: GL_FRONT"
+    elif buff == GL_COLOR_ATTACHMENT0:
+      print "glReadPixels reads from: GL_COLOR_ATTACHMENT0"
+    else:
+      print "glReadPixels reads from: ? %d" % buff
+
+    width = 640
+    height = 480
+    buf = glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE)
+    image = Image.fromstring(mode="RGB", size=(width, height), data=buf)
+    image = image.transpose(Image.FLIP_TOP_BOTTOM)
+    image.save("frame%01d.png" % f, "PNG")
+    print "Saved to frame%01d.png" % f
 
 
 def mainDisplay():
   glutInit(sys.argv)
 
-  glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE | GLUT_DEPTH)
+  glutInitDisplayMode(GLUT_RGBA | GLUT_SINGLE | GLUT_DEPTH)
   
   # get a 640 x 480 window, at the top-left corner of the screen
   glutInitWindowSize(640, 480)
@@ -229,57 +237,14 @@ def mainDisplay():
   window = glutCreateWindow("Tag Renderer Test")
 
   glutDisplayFunc(DrawGLScene)
-  glutIdleFunc(DrawGLScene)
+  glutIdleFunc(Idle)
   glutReshapeFunc(ReSizeGLScene)
   glutKeyboardFunc(keyPressed)
 
   InitGL(640, 480)
   
   glutMainLoop()
-
-
-def mainRenderFrameBuffer():
-  width=640
-  height=480
-  
-  glutInit(sys.argv)
-
-  glutInitDisplayMode(GLUT_RGBA | GLUT_SINGLE | GLUT_DEPTH)
-  
-  # Must create stub window, but can hide it
-  glutInitWindowSize(1, 1)
-  glutInitWindowPosition(0, 0)
-  glutCreateWindow("Tag Renderer Stub Window")
-  glutHideWindow()
-  
-  glutDisplayFunc(RenderAndReadGLScene)
-  #glutIdleFunc(Idle)
-  #glutReshapeFunc(ReSizeGLScene)
-  glutKeyboardFunc(keyPressed)
-
-  # Create color renderbuffer
-  rboColor = glGenRenderbuffers(1)
-  glBindRenderbuffer(GL_RENDERBUFFER, rboColor)
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_BGRA8, width, height)
-
-  # Create depth renderbuffer
-  rboDepth = glGenRenderbuffers(1)
-  glBindRenderbuffer(GL_RENDERBUFFER, rboDepth)
-  glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT24, width, height)
-
-  # Create framebuffer
-  fbo = glGenFramebuffers(1)
-  glBindFramebuffer(GL_FRAMEBUFFER, fbo)
-  glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, rboColor)
-  glFramebufferRenderbuffer(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, rboDepth)
-
-  # Configure OpenGL to render to framebuffer, and read pixels from it as well
-  glBindFramebuffer(GL_FRAMEBUFFER, fbo)
-  glReadBuffer(GL_COLOR_ATTACHMENT0)
-  
-  InitGL(width, height)
   
 
 if __name__ == "__main__":
-  #mainDisplay()
-  mainRenderFrameBuffer()
+  mainDisplay()
