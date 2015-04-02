@@ -1,16 +1,13 @@
 #! /usr/bin/env python
 
-import string
-
 from OpenGL.GL import *
 from OpenGL.GLUT import *
 from OpenGL.GLU import *
 import sys
+import string
 import math
 import numpy
-import Image
 import cv2
-import time
 
 
 # Generate camera intrinsics matrix, plumb-bob distortion vector, rectification matrix, and projection matrix, for given OpenGL perspective-projected scene
@@ -54,7 +51,7 @@ def GenCalibParams(fovy_deg, width_px, height_px, alpha=0.0):
       projection_mat[j, i] = new_intrinsics_mat[j, i]
   
   return (intrinsics_mat, distortion_vec, rectification_mat, projection_mat)
-  
+
 
 class TagRenderer:
   def __init__(self, scene_width_px, scene_height_px, scene_fovy_deg, tag_filename=None):
@@ -66,9 +63,6 @@ class TagRenderer:
     self.postDrawCB = None
     self.resetTagPose()
     self.frustum_changed = False
-    
-    self.temp_save_t = None # TODO: remove
-    self.temp_save_i = 0
 
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH)
   
@@ -99,10 +93,22 @@ class TagRenderer:
 
 
   def loadTexture(self, filename):
-    image = Image.open(filename)
-    image_width_px = image.size[0]
-    image_height_px = image.size[1]
-    image_str = image.convert("RGBX").tostring("raw", "RGBX", 0, -1)
+    # Load image using Python Image Library (PIL)
+    #image = Image.open(filename)
+    #image_width_px = image.size[0]
+    #image_height_px = image.size[1]
+    #image_str = image.convert("RGBX").tostring("raw", "RGBX", 0, -1)
+    
+    # Load image using OpenCV
+    image = cv2.imread(filename)
+    image_width_px = image.shape[0]
+    image_height_px = image.shape[1]
+    if image.shape[2] >= 3:
+      image = cv2.cvtColor(image, cv2.cv.CV_RGB2BGR) # Swap RGB with BGR
+    if image.shape[2] == 3:
+      alpha_channel = numpy.ones((image_width_px, image_height_px, 1), dtype=numpy.uint8)*255
+      image = numpy.concatenate((image, alpha_channel), axis=2)
+    image_str = image.tostring()
   
     texture = glGenTextures(1)
     glBindTexture(GL_TEXTURE_2D, texture)
@@ -229,10 +235,10 @@ class TagRenderer:
     elif key == '8':
       self.tag_y_m += 0.1
     elif key == '3':
-      self.tag_z_m += 1.0
+      self.tag_z_m += 0.1
       self.frustum_changed = True
     elif key == '9':
-      self.tag_z_m -= 1.0
+      self.tag_z_m -= 0.1
       self.frustum_changed = True
     elif key == 'r':
       self.tag_roll_deg += 15.0
@@ -255,6 +261,21 @@ class TagRenderer:
     elif key == '5':
       self.resetTagPose()
       self.frustum_changed = True
+    elif key == ' ': # Display current tag pose
+      print ''
+      print "----------"
+      print "Scene W/H: %3d %3d" % (self.scene_width_px, self.scene_height_px)
+      print "Vert FOV : %2.2f" % self.scene_fovy_deg
+      if self.tag_texture is not None:
+        print "Tag X/Y/Z: %2.2f %2.2f %2.2f" % (self.tag_x_m, self.tag_y_m, self.tag_z_m)
+        print "Tag R/P/Y: %3.2f %3.2f %3.2f" % (self.tag_roll_deg, self.tag_pitch_deg, self.tag_yaw_deg)
+        print "Tag Width: %.2f" % self.tag_width_m
+      else:
+        print "No Tag"
+      print ''
+      
+      refresh_scene = False
+
     else:
       print 'Unrecognized key:', key
       refresh_scene = False
@@ -264,6 +285,8 @@ class TagRenderer:
       
 
   def saveBuffer(self):
+    pass
+    '''
     now = time.time()
     if (self.temp_save_t is None or (now - self.temp_save_t) > 1.0) and self.temp_save_i < 10:
       pass
@@ -271,19 +294,27 @@ class TagRenderer:
       return
       
     buf = glReadPixels(0, 0, self.scene_width_px, self.scene_height_px, GL_RGB, GL_UNSIGNED_BYTE)
+    
+    # Save image using Python Image Library (PIL)
     image = Image.fromstring(mode="RGB", size=(self.scene_width_px, self.scene_height_px), data=buf)
     image = image.transpose(Image.FLIP_TOP_BOTTOM)
     image.save("frame%01d.png" % self.temp_save_i, "PNG")
+
+    # Save image using OpenCV (cv2)
+    im_rgb_flipped = numpy.reshape(numpy.fromstring(buf, dtype=numpy.uint8), (self.scene_height_px, self.scene_width_px, 3))
+    im_rgb = cv2.flip(im_rgb_flipped, 0) # flip vertically
+    im_bgr = cv2.cvtColor(im_rgb, cv2.cv.CV_RGB2BGR)
+    cv2.imwrite("frame%01d.png" % self.temp_save_i, im_bgr)
+
     print "Saved to frame%01d.png" % self.temp_save_i
 
     self.temp_save_t = now
     self.temp_save_i += 1
+    '''
 
 
   def spinOnce(self):
-    #glutPostRedisplay()
-    pass
-    # TODO: implement re-display rate
+    glutPostRedisplay()
 
 
 if __name__ == "__main__":
