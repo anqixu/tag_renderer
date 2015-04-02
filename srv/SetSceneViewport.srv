@@ -1,0 +1,4 @@
+uint32  scene_width_px
+uint32  scene_height_px
+float64 scene_fovy_deg
+---

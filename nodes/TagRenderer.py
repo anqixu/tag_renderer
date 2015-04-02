@@ -221,9 +221,8 @@ class TagRenderer:
     glutPostRedisplay()
     
 
-  def handleKeyCB(self, *args):
+  def handleKeyCB(self, key, x, y):
     refresh_scene = True
-    key = args[0]
     if key == '\033' or key == 'x': # ESC or x
       sys.exit()
     elif key == '4':
