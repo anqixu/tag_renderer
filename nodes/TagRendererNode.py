@@ -3,13 +3,17 @@
 from TagRenderer import *
 import rospy
 from tag_renderer.msg import TagPose
-from tag_renderer.srv import SetSceneViewport, SetTagSource
+from tag_renderer.srv import SetSceneViewport, SetTagSource, SetSceneViewportResponse, SetTagSourceResponse
 from sensor_msgs.msg import Image, CameraInfo
+from cv_bridge import CvBridge
+import tf
 
 
 class TagRenderer:
   def __init__(self):
     rospy.init_node('tag_renderer_node')
+    
+    self.bridge = CvBridge()
     
     self.default_tag_x_m = rospy.get_param('~default_tag_x_m', 0.0)
     self.default_tag_y_m = rospy.get_param('~default_tag_y_m', 0.0)
@@ -24,6 +28,9 @@ class TagRenderer:
     self.scene_height_px = rospy.get_param('~scene_height_px', self.scene_height_px)
     self.scene_fovy_deg = rospy.get_param('~scene_fovy_deg', self.scene_fovy_deg)
     self.frustum_changed = True
+    
+    self.t_first_pub = None
+    self.t_latest_pub = None
     
     self.tag_filename = rospy.get_param('~tag_filename', '')
     if len(self.tag_filename) > 0:
@@ -54,23 +61,7 @@ class TagRenderer:
     self.tag_pitch_deg = self.default_tag_pitch_deg # i.e. rotation about x axis
     self.tag_yaw_deg = self.default_tag_yaw_deg     # i.e. rotation about y axis
     self.tag_roll_deg = self.default_tag_roll_deg   # i.e. rotation about z axis
-    
-    
-        
-    - SetViewport service
-      - scene y fov in degrees
-      - scene width and height
-    
-    - LoadImage service
-      - source image path
-    
-    - SetPose topic
-      - tag size
-      - translation
-      - orientation
-      (what's the relationship between x y z rotations and quaternion pose?)
-    
-    - publish image, camera_info
+    self.t_first_pub = None # Force immediate redisplay+publish
 
 
   def handleKeyCB(self, key, x, y):
@@ -83,35 +74,75 @@ class TagRenderer:
 
 
   def handleTagPose(self, msg):
-    # TODO: retrieve contents from msg -or- use default, then glutPostRedisplay()
-    # also if z changed, then self.frustum_changed = True
+    self.tag_x_m = msg.pose.position.x
+    self.tag_y_m = msg.pose.position.y
+    if self.tag_z_m != -msg.pose.position.z:
+      self.tag_z_m = -msg.pose.position.z
+      self.frustum_changed = True
+    self.tag_width_m = msg.width
+    
+    quaternion = (msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w)
+    euler = tf.transformations.euler_from_quaternion(quaternion)
+    self.tag_roll_deg = math.degrees(euler[0]) # TODO: rpy order correct?
+    self.tag_pitch_deg = math.degrees(euler[1])
+    self.tag_yaw_deg = math.degrees(euler[2])
+    
+    self.t_first_pub = None # Force immediate redisplay+publish
+    
+    glutPostRedisplay()
   
   
-  def handleSetSceneViewport(self, ...):
-    # TODO: re-parse follow vars
-    self.scene_width_px
-    self.scene_height_px
-    self.scene_fovy_deg
+  def handleSetSceneViewport(self, req):
+    self.scene_width_px = req.scene_width_px
+    self.scene_height_px = req.scene_height_px
+    self.scene_fovy_deg = req.scene_fovy_deg
     self.handleResizeGLScene(-1, -1) # Force-resize to new scene_width_px and scene_height_px
+    return SetSceneViewportResponse()
 
     
-  def handleSetTagSource(self, ...):
-    # TODO: LoadTexture
+  def handleSetTagSource(self, req):
+    self.tag_filename = req.filename
+    self.loadTexture(self.tag_filename)
+    rospy.loginfo('updated tag source: %s' % self.tag_filename)
+    return SetTagSourceResponse()
 
 
   def publishBuffer(self):
-    '''
     buf = glReadPixels(0, 0, self.scene_width_px, self.scene_height_px, GL_RGB, GL_UNSIGNED_BYTE)
     im_rgb_flipped = numpy.reshape(numpy.fromstring(buf, dtype=numpy.uint8), (self.scene_height_px, self.scene_width_px, 3))
     im_rgb = cv2.flip(im_rgb_flipped, 0) # flip vertically
     im_bgr = cv2.cvtColor(im_rgb, cv2.cv.CV_RGB2BGR)
-    '''
-    # TODO
+    
+    im_msg = self.bridge.cv2_to_imgmsg(im_bgr, 'bgr8')
+    self.pub_image_raw.publish(im_msg)
+    
+    info = CameraInfo()
+    calibParams = GenCalibParams(self.scene_fovy_deg, self.scene_width_px, self.scene_height_px)
+    info.header = im_msg.header
+    info.height = self.scene_height_px
+    info.width = self.scene_width_px
+    info.distortion_model = "plumb_bob"
+    info.K = calibParams[0].flatten().tolist()
+    info.D = calibParams[1].flatten().tolist()
+    info.R = calibParams[2].flatten().tolist()
+    info.P = calibParams[3].flatten().tolist()
+    self.pub_camera_info.publish(info)
+    
+    now = rospy.Time.now()
+    self.t_latest_pub = now
+    if self.t_first_pub is None:
+      self.t_first_pub = now
 
 
   def spinOnce(self):
-    # TODO: only redisplay every so often
-    glutPostRedisplay()
+    now = rospy.Time.now()
+    if self.t_first_pub is None:
+      glutPostRedisplay()
+    elif self.republish_delay_sec == 0:
+      glutPostRedisplay()
+    elif self.republish_delay_sec > 0:
+      if floor((now - self.t_first_pub).to_sec()/self.republish_delay_sec) > floor((self.t_latest_pub - self.t_first_pub).to_sec()/self.republish_delay_sec):
+        glutPostRedisplay()
     
     
   def spin(self):

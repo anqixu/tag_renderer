@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   geometry_msgs
   sensor_msgs
+  tf
 )
 
 add_message_files(
@@ -31,9 +32,6 @@ add_service_files(
 ## Generate added messages and services with any dependencies listed here
 generate_messages(
   DEPENDENCIES
-  roscpp
-  rospy
-  message_runtime
   std_msgs
   geometry_msgs
   sensor_msgs
@@ -42,7 +40,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ftag2_core
-  CATKIN_DEPENDS roscpp rospy message_runtime std_msgs geometry_msgs sensor_msgs
+  CATKIN_DEPENDS roscpp rospy message_runtime std_msgs geometry_msgs sensor_msgs tf
 #  DEPENDS system_lib
 )
 
