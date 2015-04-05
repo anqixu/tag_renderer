@@ -9,12 +9,14 @@ from cv_bridge import CvBridge
 import tf
 
 
-class TagRenderer:
+class TagRendererNode(TagRenderer):
   def __init__(self):
     rospy.init_node('tag_renderer_node')
     
-    self.bridge = CvBridge()
-    
+    scene_width_px = rospy.get_param('~scene_width_px', 640)
+    scene_height_px = rospy.get_param('~scene_height_px', 480)
+    scene_fovy_deg = rospy.get_param('~scene_fovy_deg', 60.0)
+    self.tag_filename = rospy.get_param('~tag_filename', '')
     self.default_tag_x_m = rospy.get_param('~default_tag_x_m', 0.0)
     self.default_tag_y_m = rospy.get_param('~default_tag_y_m', 0.0)
     self.default_tag_z_m = rospy.get_param('~default_tag_z_m', 1.0)
@@ -22,36 +24,32 @@ class TagRenderer:
     self.default_tag_roll_deg = rospy.get_param('~default_tag_roll_deg', 0.0)
     self.default_tag_pitch_deg = rospy.get_param('~default_tag_pitch_deg', 0.0)
     self.default_tag_yaw_deg = rospy.get_param('~default_tag_yaw_deg', 0.0)
-    self.resetTagPose()
+    TagRenderer.__init__(self, scene_width_px, scene_height_px, scene_fovy_deg, self.tag_filename)
+    if len(self.tag_filename) > 0:
+      rospy.loginfo('loaded tag source: %s' % self.tag_filename)
+    else:
+      rospy.logwarn('no default tag source specified')
     
-    self.scene_width_px = rospy.get_param('~scene_width_px', self.scene_width_px)
-    self.scene_height_px = rospy.get_param('~scene_height_px', self.scene_height_px)
-    self.scene_fovy_deg = rospy.get_param('~scene_fovy_deg', self.scene_fovy_deg)
+    self.bridge = CvBridge()
+    
     self.frustum_changed = True
     
     self.t_first_pub = None
     self.t_latest_pub = None
-    
-    self.tag_filename = rospy.get_param('~tag_filename', '')
-    if len(self.tag_filename) > 0:
-      self.loadTexture(self.tag_filename)
-      rospy.loginfo('loaded tag source: %s' % self.tag_filename)
-    else:
-      rospy.logwarn('no default tag source specified')
     
     self.republish_delay_sec = rospy.get_param('~republish_delay_sec', -1) # < 0: do not republish; else: republish (at least) every N secs if possible
     
     self.enable_key_ctrls = rospy.get_param('~enable_key_ctrls', False) # If true, can translate/rotate/debug scene with various keys (see TagRenderer.handleKeyCB)
 
     self.postDrawCB = self.publishBuffer
-    self.pub_image_raw = rospy.Publisher('image_raw', Image, queue_size=10)
-    self.pub_camera_info = rospy.Publisher('camera_info', CameraInfo, queue_size=10)
-    self.sub_tag_pose = rospy.Subscriber('tag_pose', TagPose, self.handleTagPose)
-    self.srv_set_scene_viewport = rospy.Service('set_scene_viewport', SetSceneViewport, self.handleSetSceneViewport)
-    self.srv_set_tag_source = rospy.Service('set_tag_source', SetTagSource, self.handleSetTagSource)
+    self.pub_image_raw = rospy.Publisher('~image_raw', Image, queue_size=10)
+    self.pub_camera_info = rospy.Publisher('~camera_info', CameraInfo, queue_size=10)
+    self.sub_tag_pose = rospy.Subscriber('~tag_pose', TagPose, self.handleTagPose)
+    self.srv_set_scene_viewport = rospy.Service('~set_scene_viewport', SetSceneViewport, self.handleSetSceneViewport)
+    self.srv_set_tag_source = rospy.Service('~set_tag_source', SetTagSource, self.handleSetTagSource)
     
     rospy.loginfo('%s initialized' % rospy.get_name())
-    
+
     
   def resetTagPose(self):
     self.tag_x_m = self.default_tag_x_m
@@ -66,7 +64,7 @@ class TagRenderer:
 
   def handleKeyCB(self, key, x, y):
     if self.enable_key_ctrls:
-      self.parent.handleKeyCB(key, x, y) # TODO: properly shut down ros?
+      TagRenderer.handleKeyCB(self, key, x, y) # TODO: properly shut down ros?
     else:
       if key == '\033' or key == 'x': # ESC or x
         # TODO: properly shut down ros?
@@ -141,7 +139,7 @@ class TagRenderer:
     elif self.republish_delay_sec == 0:
       glutPostRedisplay()
     elif self.republish_delay_sec > 0:
-      if floor((now - self.t_first_pub).to_sec()/self.republish_delay_sec) > floor((self.t_latest_pub - self.t_first_pub).to_sec()/self.republish_delay_sec):
+      if math.floor((now - self.t_first_pub).to_sec()/self.republish_delay_sec) > math.floor((self.t_latest_pub - self.t_first_pub).to_sec()/self.republish_delay_sec):
         glutPostRedisplay()
     
     

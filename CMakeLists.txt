@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   sensor_msgs
   tf
+  cv_bridge
 )
 
 add_message_files(
@@ -40,10 +41,22 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ftag2_core
-  CATKIN_DEPENDS roscpp rospy message_runtime std_msgs geometry_msgs sensor_msgs tf
+  CATKIN_DEPENDS roscpp rospy message_runtime std_msgs geometry_msgs sensor_msgs tf cv_bridge
 #  DEPENDS system_lib
 )
 
 include_directories(
   ${catkin_INCLUDE_DIRS}
 )
+
+#add_library(tag_renderer
+#  src/${PROJECT_NAME}/tag_renderer.cpp
+#)
+
+#add_executable(tester src/test.cpp)
+#target_link_libraries(tester
+#  ${catkin_LIBRARIES}
+#  ${OpenCV_LIBRARIES}
+#  ${GLUT_LIBRARIES}
+#  ${OpenGL_LIBRARIES}
+#)

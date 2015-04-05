@@ -77,7 +77,7 @@ class TagRenderer:
     glutReshapeFunc(self.handleResizeGLScene)
     glutKeyboardFunc(self.handleKeyCB)
 
-    if tag_filename is not None:
+    if tag_filename is not None and len(tag_filename) > 0:
       self.loadTexture(tag_filename)
     self.initGL()
 
@@ -173,7 +173,7 @@ class TagRenderer:
       
       # Render front-side of tag with texture
       glCullFace(GL_BACK)
-      #glBindTexture(GL_TEXTURE_2D, texture) # Apparently PyOpenGL does not support this fn call
+      glBindTexture(GL_TEXTURE_2D, self.tag_texture)
       glEnable(GL_TEXTURE_2D)
       glBegin(GL_QUADS)
       glTexCoord2f(0.0, 0.0); glVertex3f(-0.5, -0.5,  0.0)  # Bottom-left of texture and quad
