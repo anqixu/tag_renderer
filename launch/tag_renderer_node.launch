@@ -16,9 +16,9 @@
     <param name="default_tag_pitch_deg" value="0.0" />
     <param name="default_tag_yaw_deg" value="0.0" />
     
-    <param name="republish_delay_sec" value="0.1" /> <!-- republish following target fixed rate -->
     <param name="republish_delay_sec" value="0" /> <!-- republish as fast as possible -->
     <param name="republish_delay_sec" value="-1" /> <!-- do not republish -->
+    <param name="republish_delay_sec" value="0.1" /> <!-- republish following target fixed rate -->
     
     <param name="enable_key_ctrls" value="True" />
     

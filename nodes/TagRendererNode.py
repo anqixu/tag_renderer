@@ -31,11 +31,11 @@ class TagRendererNode(TagRenderer):
       rospy.logwarn('no default tag source specified')
     
     self.bridge = CvBridge()
-    
     self.frustum_changed = True
-    
     self.t_first_pub = None
     self.t_latest_pub = None
+    self.update_viewport_req = None
+    self.update_tag_source_req = None
     
     self.republish_delay_sec = rospy.get_param('~republish_delay_sec', -1) # < 0: do not republish; else: republish (at least) every N secs if possible
     
@@ -49,6 +49,11 @@ class TagRendererNode(TagRenderer):
     self.srv_set_tag_source = rospy.Service('~set_tag_source', SetTagSource, self.handleSetTagSource)
     
     rospy.loginfo('%s initialized' % rospy.get_name())
+
+
+  def shutdown(self):
+    rospy.signal_shutdown('Shutdown requested by user')
+    glutLeaveMainLoop()
 
     
   def resetTagPose(self):
@@ -64,11 +69,10 @@ class TagRendererNode(TagRenderer):
 
   def handleKeyCB(self, key, x, y):
     if self.enable_key_ctrls:
-      TagRenderer.handleKeyCB(self, key, x, y) # TODO: properly shut down ros?
+      TagRenderer.handleKeyCB(self, key, x, y)
     else:
       if key == '\033' or key == 'x': # ESC or x
-        # TODO: properly shut down ros?
-        sys.exit()
+        self.shutdown()
 
 
   def handleTagPose(self, msg):
@@ -85,25 +89,18 @@ class TagRendererNode(TagRenderer):
     self.tag_pitch_deg = math.degrees(euler[1])
     self.tag_yaw_deg = math.degrees(euler[2])
     
-    self.t_first_pub = None # Force immediate redisplay+publish
+    self.t_first_pub = None # Force immediate redisplay+publish on next spinOnce
     
     glutPostRedisplay()
   
   
   def handleSetSceneViewport(self, req):
-    self.scene_width_px = req.scene_width_px
-    self.scene_height_px = req.scene_height_px
-    self.scene_fovy_deg = req.scene_fovy_deg
-    self.handleResizeGLScene(-1, -1) # Force-resize to new scene_width_px and scene_height_px
-    # BUG: if aspect ratio is changed, require window to be maximized then un-maximized to take effect
+    self.update_viewport_req = req # Postpone resize till on main (GL) thread's render context
     return SetSceneViewportResponse()
 
     
   def handleSetTagSource(self, req):
-    self.tag_filename = req.filename
-    self.loadTexture(self.tag_filename)
-    #self.test(1)
-    rospy.loginfo('updated tag source: %s' % self.tag_filename)
+    self.update_tag_source_req = req # Postpone loading texture till on main (GL) thread's render context
     return SetTagSourceResponse()
 
 
@@ -135,6 +132,23 @@ class TagRendererNode(TagRenderer):
 
 
   def spinOnce(self):
+    if self.update_viewport_req is not None:
+      req = self.update_viewport_req
+      self.scene_width_px = req.scene_width_px
+      self.scene_height_px = req.scene_height_px
+      self.scene_fovy_deg = req.scene_fovy_deg
+      self.handleResizeGLScene(-1, -1) # Force-resize to new scene_width_px and scene_height_px
+      self.update_viewport_req = None
+      self.t_first_pub = None # force immediate redisplay
+      
+    if self.update_tag_source_req is not None:
+      req = self.update_tag_source_req
+      self.tag_filename = req.filename
+      self.loadTexture(self.tag_filename)
+      rospy.loginfo('updated tag source: %s' % self.tag_filename)
+      self.update_tag_source_req = None
+      self.t_first_pub = None # force immediate redisplay
+    
     now = rospy.Time.now()
     t_first_pub = self.t_first_pub
     t_latest_pub = self.t_latest_pub

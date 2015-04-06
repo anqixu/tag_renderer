@@ -84,6 +84,9 @@ class TagRenderer:
     self.initGL()
 
 
+  def shutdown(self):
+    glutLeaveMainLoop()
+
   def resetTagPose(self):
     self.tag_x_m = 0.0
     self.tag_y_m = 0.0
@@ -242,7 +245,7 @@ class TagRenderer:
   def handleKeyCB(self, key, x, y):
     refresh_scene = True
     if key == '\033' or key == 'x': # ESC or x
-      sys.exit()
+      self.shutdown()
     elif key == '4':
       self.tag_x_m -= 0.1
     elif key == '6':
@@ -278,10 +281,6 @@ class TagRenderer:
     elif key == '5':
       self.resetTagPose()
       self.frustum_changed = True
-    elif key == '1': # TODO: remove
-      self.loadTexture('/home/mimic/catkin_ws/1_ftag/src/tag_renderer/nodes/ftag2_6s2f22b_20_00_03_13_30_21.png')
-    elif key == '7':
-      self.loadTexture('/home/mimic/catkin_ws/1_ftag/src/tag_renderer/nodes/ftag2_6s5f33322b_40024_05244_07424_37762_66560_67520.png')
     elif key == ' ': # Display current tag pose
       print ''
       print "----------"
@@ -336,13 +335,6 @@ class TagRenderer:
 
   def spinOnce(self):
     glutPostRedisplay()
-
-
-  def test(self, var): # TODO: remove
-    if var > 0:
-      self.loadTexture('/home/mimic/catkin_ws/1_ftag/src/tag_renderer/nodes/ftag2_6s5f33322b_40024_05244_07424_37762_66560_67520.png')
-    else:
-      self.loadTexture('/home/mimic/catkin_ws/1_ftag/src/tag_renderer/nodes/ftag2_6s2f22b_20_00_03_13_30_21.png')
 
 
 if __name__ == "__main__":
