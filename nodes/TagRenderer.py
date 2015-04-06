@@ -7,6 +7,7 @@ import sys
 import string
 import math
 import numpy
+import threading
 import cv2
 
 
@@ -56,6 +57,7 @@ def GenCalibParams(fovy_deg, width_px, height_px, alpha=0.0):
 class TagRenderer:
   def __init__(self, scene_width_px, scene_height_px, scene_fovy_deg, tag_filename=None):
     # Set internal variables
+    self.texture_mutex = threading.Lock()
     self.scene_width_px = scene_width_px
     self.scene_height_px = scene_height_px
     self.scene_fovy_deg = scene_fovy_deg
@@ -101,6 +103,9 @@ class TagRenderer:
     
     # Load image using OpenCV
     image = cv2.imread(filename)
+    if image is None:
+      print 'Failed to load:', filename
+      return
     image_width_px = image.shape[0]
     image_height_px = image.shape[1]
     if image.shape[2] >= 3:
@@ -109,22 +114,33 @@ class TagRenderer:
       alpha_channel = numpy.ones((image_width_px, image_height_px, 1), dtype=numpy.uint8)*255
       image = numpy.concatenate((image, alpha_channel), axis=2)
     image_str = image.tostring()
-  
+    
+    # Clear previous texture
+    self.texture_mutex.acquire()
+    if self.tag_texture is not None:
+      prev_texture = self.tag_texture
+      self.tag_texture = None
+      glDeleteTextures(prev_texture)
+    self.texture_mutex.release()
+    
+    # Create new texture
     texture = glGenTextures(1)
     glBindTexture(GL_TEXTURE_2D, texture)
     #glPixelStorei(GL_UNPACK_ALIGNMENT, 1) # Read pixels in byte-aligned manner (vs default of word-aligned manner)
     glTexImage2D(GL_TEXTURE_2D, 0, 3, image_width_px, image_height_px, 0, GL_RGBA, GL_UNSIGNED_BYTE, image_str)
-    
+    self.texture_mutex.acquire()
     self.tag_texture = texture
-
-  
-  def initGL(self):
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP) # Clamp texture at borders instead ...
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP) # ... of mirror or replicating
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR) # Slower than GL_NEAREST, but more accurate blending
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR) # Ideally want to use GL_LINEAR_MIPMAP_LINEAR, but does not work in software Linux renderer
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_DECAL) # Use image's color instead of blending with surface (lighting)
+    self.texture_mutex.release()
+    
+    del image # Free image memory once mapped onto texture
 
+  
+  def initGL(self):
     glEnable(GL_CULL_FACE) # Use single-faced geometry (front- & back-face culling) to display white tag back
 
     glClearColor(0.0, 0.0, 0.0, 0.0) # Set black background
@@ -141,8 +157,8 @@ class TagRenderer:
     tag_bounding_sphere_radius = math.sqrt(self.tag_width_m*self.tag_width_m/2.0)*1.1
     near = -self.tag_z_m - tag_bounding_sphere_radius
     far = -self.tag_z_m + tag_bounding_sphere_radius
-    if near <= 0.0001:
-      near = 0.0001
+    if near <= 1e-10:
+      near = 1e-10
     if far <= near:
       far = near + tag_bounding_sphere_radius
     
@@ -161,6 +177,7 @@ class TagRenderer:
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Clear color and depth buffers
     
+    self.texture_mutex.acquire()
     if self.tag_texture is not None:
       # Apply translation and rotation to GL_MODELVIEW
       glLoadIdentity()
@@ -173,13 +190,13 @@ class TagRenderer:
       
       # Render front-side of tag with texture
       glCullFace(GL_BACK)
-      glBindTexture(GL_TEXTURE_2D, self.tag_texture)
+      #glBindTexture(GL_TEXTURE_2D, self.tag_texture)
       glEnable(GL_TEXTURE_2D)
       glBegin(GL_QUADS)
-      glTexCoord2f(0.0, 0.0); glVertex3f(-0.5, -0.5,  0.0)  # Bottom-left of texture and quad
-      glTexCoord2f(1.0, 0.0); glVertex3f( 0.5, -0.5,  0.0)  # Bottom-right of texture and quad
-      glTexCoord2f(1.0, 1.0); glVertex3f( 0.5,  0.5,  0.0)  # Top-right of texture and quad
-      glTexCoord2f(0.0, 1.0); glVertex3f(-0.5,  0.5,  0.0)  # Top-left of texture and quad
+      glTexCoord2f(0.0, 1.0); glVertex3f(-0.5, -0.5,  0.0)  # Bottom-left of texture
+      glTexCoord2f(1.0, 1.0); glVertex3f( 0.5, -0.5,  0.0)  # Bottom-right of texture
+      glTexCoord2f(1.0, 0.0); glVertex3f( 0.5,  0.5,  0.0)  # Top-right of texture
+      glTexCoord2f(0.0, 0.0); glVertex3f(-0.5,  0.5,  0.0)  # Top-left of texture
       glEnd()
       glDisable(GL_TEXTURE_2D)
       #glDisable(GL_CULL_FACE)
@@ -189,13 +206,14 @@ class TagRenderer:
       #glEnable(GL_CULL_FACE)
       glBegin(GL_QUADS)
       glColor3f(1.0, 1.0, 1.0)
-      glVertex3f(-0.5, -0.5,  0.0)  # Bottom-left of texture and quad
-      glVertex3f( 0.5, -0.5,  0.0)  # Bottom-right of texture and quad
-      glVertex3f( 0.5,  0.5,  0.0)  # Top-right of texture and quad
-      glVertex3f(-0.5,  0.5,  0.0)  # Top-left of texture and quad
+      glVertex3f(-0.5, -0.5,  0.0)  # Bottom-left of texture
+      glVertex3f( 0.5, -0.5,  0.0)  # Bottom-right of texture
+      glVertex3f( 0.5,  0.5,  0.0)  # Top-right of texture
+      glVertex3f(-0.5,  0.5,  0.0)  # Top-left of texture
       glEnd()
+    self.texture_mutex.release()
 
-    glutSwapBuffers()
+    glutSwapBuffers() # == glFlush() for single-buffered use
     
     if self.postDrawCB is not None:
       self.postDrawCB()
@@ -260,6 +278,10 @@ class TagRenderer:
     elif key == '5':
       self.resetTagPose()
       self.frustum_changed = True
+    elif key == '1': # TODO: remove
+      self.loadTexture('/home/mimic/catkin_ws/1_ftag/src/tag_renderer/nodes/ftag2_6s2f22b_20_00_03_13_30_21.png')
+    elif key == '7':
+      self.loadTexture('/home/mimic/catkin_ws/1_ftag/src/tag_renderer/nodes/ftag2_6s5f33322b_40024_05244_07424_37762_66560_67520.png')
     elif key == ' ': # Display current tag pose
       print ''
       print "----------"
@@ -314,6 +336,13 @@ class TagRenderer:
 
   def spinOnce(self):
     glutPostRedisplay()
+
+
+  def test(self, var): # TODO: remove
+    if var > 0:
+      self.loadTexture('/home/mimic/catkin_ws/1_ftag/src/tag_renderer/nodes/ftag2_6s5f33322b_40024_05244_07424_37762_66560_67520.png')
+    else:
+      self.loadTexture('/home/mimic/catkin_ws/1_ftag/src/tag_renderer/nodes/ftag2_6s2f22b_20_00_03_13_30_21.png')
 
 
 if __name__ == "__main__":

@@ -95,12 +95,14 @@ class TagRendererNode(TagRenderer):
     self.scene_height_px = req.scene_height_px
     self.scene_fovy_deg = req.scene_fovy_deg
     self.handleResizeGLScene(-1, -1) # Force-resize to new scene_width_px and scene_height_px
+    # BUG: if aspect ratio is changed, require window to be maximized then un-maximized to take effect
     return SetSceneViewportResponse()
 
     
   def handleSetTagSource(self, req):
     self.tag_filename = req.filename
     self.loadTexture(self.tag_filename)
+    #self.test(1)
     rospy.loginfo('updated tag source: %s' % self.tag_filename)
     return SetTagSourceResponse()
 
@@ -134,12 +136,14 @@ class TagRendererNode(TagRenderer):
 
   def spinOnce(self):
     now = rospy.Time.now()
-    if self.t_first_pub is None:
+    t_first_pub = self.t_first_pub
+    t_latest_pub = self.t_latest_pub
+    if t_first_pub is None:
       glutPostRedisplay()
     elif self.republish_delay_sec == 0:
       glutPostRedisplay()
     elif self.republish_delay_sec > 0:
-      if math.floor((now - self.t_first_pub).to_sec()/self.republish_delay_sec) > math.floor((self.t_latest_pub - self.t_first_pub).to_sec()/self.republish_delay_sec):
+      if math.floor((now - t_first_pub).to_sec()/self.republish_delay_sec) > math.floor((t_latest_pub - t_first_pub).to_sec()/self.republish_delay_sec):
         glutPostRedisplay()
     
     
