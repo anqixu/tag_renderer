@@ -6,12 +6,12 @@
 
     <param name="scene_width_px" value="640" />
     <param name="scene_height_px" value="480" />
-    <param name="scene_fovy_deg" value="60.0" />
+    <param name="scene_fovy_deg" value="45.0" />
 
     <param name="default_tag_x_m" value="0.0" />
     <param name="default_tag_y_m" value="0.0" />
     <param name="default_tag_z_m" value="1.0" />
-    <param name="default_tag_width_m" value="0.1" /> <!-- note: account for tag image border manually here -->
+    <param name="default_tag_width_m" value="0.125" /> <!-- note: account for tag image border manually here -->
     <param name="default_tag_roll_deg" value="0.0" />
     <param name="default_tag_pitch_deg" value="0.0" />
     <param name="default_tag_yaw_deg" value="0.0" />

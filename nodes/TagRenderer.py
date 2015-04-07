@@ -35,6 +35,7 @@ def GenCalibParams(fovy_deg, width_px, height_px, alpha=0.0):
   intrinsics_mat[1, 1] = focal_length_y_px
   intrinsics_mat[0, 2] = float(width_px)/2.
   intrinsics_mat[1, 2] = float(height_px)/2.
+  intrinsics_mat[2, 2] = 1.0
   
   # Zero-distortion coefficients for plumb bob model
   distortion_vec = numpy.zeros((1, 5), numpy.float64)
@@ -179,18 +180,18 @@ class TagRenderer:
       self.updateFrustum()
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Clear color and depth buffers
+
+    # Apply translation and rotation to GL_MODELVIEW
+    glLoadIdentity()
+    glTranslatef(self.tag_x_m, self.tag_y_m, self.tag_z_m)
+    glRotatef(self.tag_pitch_deg, 1.0, 0.0, 0.0)
+    glRotatef(self.tag_yaw_deg, 0.0, 1.0, 0.0)
+    glRotatef(self.tag_roll_deg, 0.0, 0.0, 1.0)
+      
+    glScale(self.tag_width_m, self.tag_width_m, self.tag_width_m)
     
     self.texture_mutex.acquire()
     if self.tag_texture is not None:
-      # Apply translation and rotation to GL_MODELVIEW
-      glLoadIdentity()
-      glTranslatef(self.tag_x_m, self.tag_y_m, self.tag_z_m)
-      glRotatef(self.tag_pitch_deg, 1.0, 0.0, 0.0)
-      glRotatef(self.tag_yaw_deg, 0.0, 1.0, 0.0)
-      glRotatef(self.tag_roll_deg, 0.0, 0.0, 1.0)
-      
-      glScale(self.tag_width_m, self.tag_width_m, self.tag_width_m)
-      
       # Render front-side of tag with texture
       glCullFace(GL_BACK)
       #glBindTexture(GL_TEXTURE_2D, self.tag_texture)
@@ -214,6 +215,17 @@ class TagRenderer:
       glVertex3f( 0.5,  0.5,  0.0)  # Top-right of texture
       glVertex3f(-0.5,  0.5,  0.0)  # Top-left of texture
       glEnd()
+    else:
+      glDisable(GL_CULL_FACE)
+      glBegin(GL_QUADS)
+      glColor3f(1.0, 1.0, 1.0)
+      glVertex3f(-0.5, -0.5,  0.0)  # Bottom-left of texture
+      glVertex3f( 0.5, -0.5,  0.0)  # Bottom-right of texture
+      glVertex3f( 0.5,  0.5,  0.0)  # Top-right of texture
+      glVertex3f(-0.5,  0.5,  0.0)  # Top-left of texture
+      glEnd()
+      glEnable(GL_CULL_FACE)
+      
     self.texture_mutex.release()
 
     glutSwapBuffers() # == glFlush() for single-buffered use
