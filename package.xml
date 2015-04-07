@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <package>
   <name>tag_renderer</name>
-  <version>0.0.0</version>
+  <version>0.0.1</version>
   <description>Tag renderer</description>
 
   <maintainer email="anqixu@cim.mcgill.ca">Anqi Xu</maintainer>
