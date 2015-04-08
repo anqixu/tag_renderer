@@ -2,9 +2,10 @@
 
 from TagRenderer import *
 import rospy
+from std_msgs.msg import String
+from sensor_msgs.msg import Image, CameraInfo
 from tag_renderer.msg import TagPose
 from tag_renderer.srv import SetSceneViewport, SetTagSource, SetSceneViewportResponse, SetTagSourceResponse
-from sensor_msgs.msg import Image, CameraInfo
 from cv_bridge import CvBridge
 import tf
 
@@ -44,7 +45,8 @@ class TagRendererNode(TagRenderer):
     self.postDrawCB = self.publishBuffer
     self.pub_image_raw = rospy.Publisher('~image_raw', Image, queue_size=10)
     self.pub_camera_info = rospy.Publisher('~camera_info', CameraInfo, queue_size=10)
-    self.sub_tag_pose = rospy.Subscriber('~tag_pose', TagPose, self.handleTagPose)
+    self.sub_tag_pose = rospy.Subscriber('~set_tag_pose', TagPose, self.handleTagPose)
+    self.sub_tag_source = rospy.Subscriber('~set_tag_source', String, self.handleSetTagSourceMsg)
     self.srv_set_scene_viewport = rospy.Service('~set_scene_viewport', SetSceneViewport, self.handleSetSceneViewport)
     self.srv_set_tag_source = rospy.Service('~set_tag_source', SetTagSource, self.handleSetTagSource)
     
@@ -91,6 +93,8 @@ class TagRendererNode(TagRenderer):
     
     self.t_first_pub = None # Force immediate redisplay+publish on next spinOnce
     
+    #print 'Received tag pose request: w=%.2f, xyz=(%.2f, %.2f, %.2f), rpy_deg=(%.2f, %.2f, %.2f)' % (self.tag_width_m, self.tag_x_m, self.tag_y_m, self.tag_z_m, self.tag_roll_deg, self.tag_pitch_deg, self.tag_roll_deg) # TODO: remove
+    
     glutPostRedisplay()
   
   
@@ -100,8 +104,15 @@ class TagRendererNode(TagRenderer):
 
     
   def handleSetTagSource(self, req):
+    #print 'Received tag source request:', req.filename # TODO: remove
     self.update_tag_source_req = req # Postpone loading texture till on main (GL) thread's render context
     return SetTagSourceResponse()
+
+
+  def handleSetTagSourceMsg(self, msg):
+    self.update_tag_source_req = SetTagSource() # Postpone loading texture till on main (GL) thread's render context
+    self.update_tag_source_req.filename = msg.data
+    #print 'Received tag source msg request:', msg.data # TODO: remove
 
 
   def publishBuffer(self):

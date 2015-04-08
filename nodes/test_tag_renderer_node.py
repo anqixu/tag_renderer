@@ -2,6 +2,7 @@
 
 import rospy
 import rospkg
+from std_msgs.msg import String
 from tag_renderer.msg import TagPose
 from tag_renderer.srv import SetSceneViewport, SetTagSource, SetSceneViewportRequest, SetTagSourceRequest
 import tf
@@ -20,7 +21,8 @@ class TagRendererNodeTester:
     self.cln_set_scene_viewport = rospy.ServiceProxy('/tag_renderer_node/set_scene_viewport', SetSceneViewport)
     self.cln_set_tag_source = rospy.ServiceProxy('/tag_renderer_node/set_tag_source', SetTagSource)
 
-    self.pub_tag_pose = rospy.Publisher('/tag_renderer_node/tag_pose', TagPose, queue_size=10)
+    self.pub_set_tag_pose = rospy.Publisher('/tag_renderer_node/set_tag_pose', TagPose, queue_size=10)
+    self.pub_set_tag_source = rospy.Publisher('/tag_renderer_node/set_tag_source', String, queue_size=10)
     
     rospy.loginfo('%s initialized' % rospy.get_name())
     
@@ -28,32 +30,32 @@ class TagRendererNodeTester:
     tag_renderer_dir = rospack.get_path('tag_renderer')
 
     rospy.loginfo('Resetting original tag')
-    req = SetTagSourceRequest()
-    req.filename = '%s/nodes/ftag2_6s2f22b_20_00_03_13_30_21.png' % (tag_renderer_dir)
-    self.cln_set_tag_source(req)
+    msg = String()
+    msg.data = '%s/nodes/ftag2_6s2f22b_20_00_03_13_30_21.png' % (tag_renderer_dir)
+    self.pub_set_tag_source.publish(msg)
     rospy.sleep(2.0)
 
     rospy.loginfo('Moving tag in quad')
     rospy.sleep(1.0)
-    x=0.1; y=0.0; z=1.0; w=0.1; r=0.0; p=0.0; a=0.0;
+    x=0.1; y=0.0; z=1.0; w=0.125; r=0.0; p=0.0; a=0.0;
     self.pubPose(x,y,z,w,r,p,a)
     rospy.sleep(1.0)
 
-    x=0.1; y=0.1; z=1.0; w=0.1; r=0.0; p=0.0; a=0.0;
+    x=0.1; y=0.1; z=1.0; w=0.125; r=0.0; p=0.0; a=0.0;
     self.pubPose(x,y,z,w,r,p,a)
     rospy.sleep(1.0)
 
-    x=0.0; y=0.1; z=1.0; w=0.1; r=0.0; p=0.0; a=0.0;
+    x=0.0; y=0.1; z=1.0; w=0.125; r=0.0; p=0.0; a=0.0;
     self.pubPose(x,y,z,w,r,p,a)
     rospy.sleep(1.0)
 
-    x=0.0; y=0.0; z=1.0; w=0.1; r=0.0; p=0.0; a=0.0;
+    x=0.0; y=0.0; z=1.0; w=0.125; r=0.0; p=0.0; a=0.0;
     self.pubPose(x,y,z,w,r,p,a)
     rospy.sleep(2.0)
     
     rospy.loginfo('Sweeping roll angle from -90deg to 90deg')
     for i in xrange(-10, 11):
-      x=0.0; y=0.0; z=1.0; w=0.1; r=i*7.5; p=0.0; a=0.0;
+      x=0.0; y=0.0; z=1.0; w=0.125; r=i*7.5; p=0.0; a=0.0;
       self.pubPose(x,y,z,w,r,p,a)
       rospy.sleep(0.2)
     
@@ -66,18 +68,18 @@ class TagRendererNodeTester:
 
     rospy.loginfo('Sweeping pitch angle from -90deg to 90deg')
     for i in xrange(-10, 11):
-      x=0.0; y=0.0; z=1.0; w=0.1; r=0.0; p=i*7.5; a=0.0;
+      x=0.0; y=0.0; z=1.0; w=0.125; r=0.0; p=i*7.5; a=0.0;
       self.pubPose(x,y,z,w,r,p,a)
       rospy.sleep(0.2)
     
     rospy.loginfo('Sweeping yaw angle from -90deg to 90deg')
     for i in xrange(-10, 11):
-      x=0.0; y=0.0; z=1.0; w=0.1; r=0.0; p=20.0; a=i*7.5;
+      x=0.0; y=0.0; z=1.0; w=0.125; r=0.0; p=20.0; a=i*7.5;
       self.pubPose(x,y,z,w,r,p,a)
       rospy.sleep(0.2)
     
     rospy.loginfo('Resetting original pose')
-    x=0.0; y=0.0; z=1.0; w=0.1; r=0.0; p=0.0; a=0.0;
+    x=0.0; y=0.0; z=1.0; w=0.125; r=0.0; p=0.0; a=0.0;
     self.pubPose(x,y,z,w,r,p,a)
     
     rospy.loginfo('All done')
@@ -92,7 +94,7 @@ class TagRendererNodeTester:
     pose_msg.pose.orientation.y=quat[1]
     pose_msg.pose.orientation.z=quat[2]
     pose_msg.pose.orientation.w=quat[3]
-    self.pub_tag_pose.publish(pose_msg)
+    self.pub_set_tag_pose.publish(pose_msg)
 
 
 if __name__ == "__main__":
