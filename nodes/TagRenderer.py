@@ -90,8 +90,8 @@ class TagRenderer:
 
   def resetTagPose(self):
     self.tag_x_m = 0.0
-    self.tag_y_m = 0.0
-    self.tag_z_m = -1.0 # note negative z direction
+    self.tag_y_m = -0.0 # note negative y direction (respecting right-handed coordinate frame)
+    self.tag_z_m = -1.0 # note negative z direction (respecting right-handed coordinate frame)
     self.tag_width_m = 0.1
     self.tag_pitch_deg = 0.0 # i.e. rotation about x axis
     self.tag_yaw_deg = 0.0   # i.e. rotation about y axis
@@ -263,14 +263,14 @@ class TagRenderer:
     elif key == '6':
       self.tag_x_m += 0.1
     elif key == '2':
-      self.tag_y_m -= 0.1
+      self.tag_y_m -= -0.1
     elif key == '8':
-      self.tag_y_m += 0.1
+      self.tag_y_m += -0.1
     elif key == '3':
-      self.tag_z_m += 0.1
+      self.tag_z_m -= -0.1
       self.frustum_changed = True
     elif key == '9':
-      self.tag_z_m -= 0.1
+      self.tag_z_m += -0.1
       self.frustum_changed = True
     elif key == 'r':
       self.tag_roll_deg += 15.0
@@ -299,7 +299,7 @@ class TagRenderer:
       print "Scene W/H: %3d %3d" % (self.scene_width_px, self.scene_height_px)
       print "Vert FOV : %2.2f" % self.scene_fovy_deg
       if self.tag_texture is not None:
-        print "Tag X/Y/Z: %2.2f %2.2f %2.2f" % (self.tag_x_m, self.tag_y_m, self.tag_z_m)
+        print "Tag X/Y/Z: %2.2f %2.2f %2.2f" % (self.tag_x_m, -self.tag_y_m, -self.tag_z_m)
         print "Tag R/P/Y: %3.2f %3.2f %3.2f" % (self.tag_roll_deg, self.tag_pitch_deg, self.tag_yaw_deg)
         print "Tag Width: %.2f" % self.tag_width_m
       else:

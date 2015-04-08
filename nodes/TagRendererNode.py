@@ -78,16 +78,17 @@ class TagRendererNode(TagRenderer):
 
 
   def handleTagPose(self, msg):
+    # note negative y & z directions (respecting right-handed coordinate frame)
     self.tag_x_m = msg.pose.position.x
-    self.tag_y_m = msg.pose.position.y
+    self.tag_y_m = -msg.pose.position.y
     if self.tag_z_m != -msg.pose.position.z:
       self.tag_z_m = -msg.pose.position.z
       self.frustum_changed = True
     self.tag_width_m = msg.width
     
     quaternion = (msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w)
-    euler = tf.transformations.euler_from_quaternion(quaternion)
-    self.tag_roll_deg = math.degrees(euler[0]) # TODO: rpy order correct?
+    euler = tf.transformations.euler_from_quaternion(quaternion, 'sxyz')
+    self.tag_roll_deg = math.degrees(euler[0])
     self.tag_pitch_deg = math.degrees(euler[1])
     self.tag_yaw_deg = math.degrees(euler[2])
     
