@@ -4,8 +4,8 @@
   <node pkg="tag_renderer" type="TagRendererNode.py" name="tag_renderer_node" output="screen">
     <param name="tag_filename" value="$(find tag_renderer)/nodes/ftag2_6s2f22b_20_00_03_13_30_21.png" />
 
-    <param name="scene_width_px" value="640" />
-    <param name="scene_height_px" value="480" />
+    <param name="scene_width_px" value="800" />
+    <param name="scene_height_px" value="600" />
     <param name="scene_fovy_deg" value="45.0" />
 
     <param name="default_tag_x_m" value="0.0" />

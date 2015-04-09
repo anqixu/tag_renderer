@@ -89,13 +89,13 @@ class TagRenderer:
     glutLeaveMainLoop()
 
   def resetTagPose(self):
-    self.tag_x_m = 0.0
-    self.tag_y_m = -0.0 # note negative y direction (respecting right-handed coordinate frame)
-    self.tag_z_m = -1.0 # note negative z direction (respecting right-handed coordinate frame)
-    self.tag_width_m = 0.1
-    self.tag_pitch_deg = 0.0 # i.e. rotation about x axis
-    self.tag_yaw_deg = 0.0   # i.e. rotation about y axis
-    self.tag_roll_deg = 0.0  # i.e. rotation about z axis
+    self.tag_tx_m = 0.0 # +x: move tag towards left (tag seen as moving towards right from camera view)
+    self.tag_ty_m = 0.0 # +y: move tag towards down (tag seen as moving towards down from camera view)
+    self.tag_tz_m = 1.0 # +z: move tag away (tag seen as moving away from camera view)
+    self.tag_width_m = 0.125
+    self.tag_rx_deg = 0.0 # i.e. rotation about x axis, in camera/fixed/world frame
+    self.tag_ry_deg = 0.0 # i.e. rotation about y axis, in camera/fixed/world frame
+    self.tag_rz_deg = 0.0 # i.e. rotation about z axis, in camera/fixed/world frame
 
 
   def loadTexture(self, filename):
@@ -159,8 +159,8 @@ class TagRenderer:
 
   def updateFrustum(self):
     tag_bounding_sphere_radius = math.sqrt(self.tag_width_m*self.tag_width_m/2.0)*1.1
-    near = -self.tag_z_m - tag_bounding_sphere_radius
-    far = -self.tag_z_m + tag_bounding_sphere_radius
+    near = self.tag_tz_m - tag_bounding_sphere_radius
+    far = self.tag_tz_m + tag_bounding_sphere_radius
     if near <= 1e-10:
       near = 1e-10
     if far <= near:
@@ -180,13 +180,27 @@ class TagRenderer:
       self.updateFrustum()
     
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Clear color and depth buffers
+    
+    # Wrap angles
+    while self.tag_rx_deg < 0:
+      self.tag_rx_deg += 360.0
+    while self.tag_rx_deg >= 360.0:
+      self.tag_rx_deg -= 360.0
+    while self.tag_ry_deg < 0:
+      self.tag_ry_deg += 360.0
+    while self.tag_ry_deg >= 360.0:
+      self.tag_ry_deg -= 360.0
+    while self.tag_rz_deg < 0:
+      self.tag_rz_deg += 360.0
+    while self.tag_rz_deg >= 360.0:
+      self.tag_rz_deg -= 360.0
 
     # Apply translation and rotation to GL_MODELVIEW
     glLoadIdentity()
-    glTranslatef(self.tag_x_m, self.tag_y_m, self.tag_z_m)
-    glRotatef(self.tag_pitch_deg, 1.0, 0.0, 0.0)
-    glRotatef(self.tag_yaw_deg, 0.0, 1.0, 0.0)
-    glRotatef(self.tag_roll_deg, 0.0, 0.0, 1.0)
+    glTranslatef(self.tag_tx_m, -self.tag_ty_m, -self.tag_tz_m) # Adhere to RHS coordinate frame, +x: right, +y: down, +z: away
+    glRotatef((360.0-self.tag_rz_deg), 0.0, 0.0, 1.0)
+    glRotatef((360.0-self.tag_ry_deg), 0.0, 1.0, 0.0)
+    glRotatef(self.tag_rx_deg, 1.0, 0.0, 0.0)
       
     glScale(self.tag_width_m, self.tag_width_m, self.tag_width_m)
     
@@ -259,31 +273,31 @@ class TagRenderer:
     if key == '\033' or key == 'x': # ESC or x
       self.shutdown()
     elif key == '4':
-      self.tag_x_m -= 0.1
+      self.tag_tx_m -= 0.1
     elif key == '6':
-      self.tag_x_m += 0.1
-    elif key == '2':
-      self.tag_y_m -= -0.1
+      self.tag_tx_m += 0.1
     elif key == '8':
-      self.tag_y_m += -0.1
+      self.tag_ty_m -= 0.1
+    elif key == '2':
+      self.tag_ty_m += 0.1
     elif key == '3':
-      self.tag_z_m -= -0.1
+      self.tag_tz_m -= 0.1
       self.frustum_changed = True
     elif key == '9':
-      self.tag_z_m += -0.1
+      self.tag_tz_m += 0.1
       self.frustum_changed = True
-    elif key == 'r':
-      self.tag_roll_deg += 15.0
-    elif key == 'R':
-      self.tag_roll_deg -= 15.0
     elif key == 'p':
-      self.tag_pitch_deg += 15.0
+      self.tag_rx_deg += 15.0
     elif key == 'P':
-      self.tag_pitch_deg -= 15.0
+      self.tag_rx_deg -= 15.0
     elif key == 'y':
-      self.tag_yaw_deg += 15.0
+      self.tag_ry_deg += 15.0
     elif key == 'Y':
-      self.tag_yaw_deg -= 15.0
+      self.tag_ry_deg -= 15.0
+    elif key == 'r':
+      self.tag_rz_deg += 15.0
+    elif key == 'R':
+      self.tag_rz_deg -= 15.0
     elif key == '+':
       self.tag_width_m *= 2.0
       self.frustum_changed = True
@@ -299,8 +313,8 @@ class TagRenderer:
       print "Scene W/H: %3d %3d" % (self.scene_width_px, self.scene_height_px)
       print "Vert FOV : %2.2f" % self.scene_fovy_deg
       if self.tag_texture is not None:
-        print "Tag X/Y/Z: %2.2f %2.2f %2.2f" % (self.tag_x_m, -self.tag_y_m, -self.tag_z_m)
-        print "Tag R/P/Y: %3.2f %3.2f %3.2f" % (self.tag_roll_deg, self.tag_pitch_deg, self.tag_yaw_deg)
+        print "Tag T X/Y/Z: %2.2f %2.2f %2.2f" % (self.tag_tx_m, self.tag_ty_m, self.tag_tz_m)
+        print "  Rot X/Y/Z: %3.2f %3.2f %3.2f" % (self.tag_rx_deg, self.tag_ry_deg, self.tag_rz_deg)
         print "Tag Width: %.2f" % self.tag_width_m
       else:
         print "No Tag"
@@ -352,8 +366,8 @@ class TagRenderer:
 if __name__ == "__main__":
   glutInit(sys.argv)
   
-  width = 640
-  height = 480
+  width = 800
+  height = 600
   fovy = 45.0
   tag_filename = "ftag2_6s2f22b_20_00_03_13_30_21.png"
   

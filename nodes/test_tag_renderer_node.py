@@ -36,27 +36,31 @@ class TagRendererNodeTester:
     rospy.sleep(2.0)
 
     rospy.loginfo('Moving tag in quad')
-    rospy.sleep(1.0)
-    x=0.1; y=0.0; z=1.0; w=0.125; r=0.0; p=0.0; a=0.0;
-    self.pubPose(x,y,z,w,r,p,a)
+
+    w=0.125; tx=0.0; ty=0.0; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
+    self.pubPose(w,tx,ty,tz,rx,ry,rz)
     rospy.sleep(1.0)
 
-    x=0.1; y=0.1; z=1.0; w=0.125; r=0.0; p=0.0; a=0.0;
-    self.pubPose(x,y,z,w,r,p,a)
+    w=0.125; tx=0.1; ty=0.0; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
+    self.pubPose(w,tx,ty,tz,rx,ry,rz)
     rospy.sleep(1.0)
 
-    x=0.0; y=0.1; z=1.0; w=0.125; r=0.0; p=0.0; a=0.0;
-    self.pubPose(x,y,z,w,r,p,a)
+    w=0.125; tx=0.1; ty=0.1; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
+    self.pubPose(w,tx,ty,tz,rx,ry,rz)
     rospy.sleep(1.0)
 
-    x=0.0; y=0.0; z=1.0; w=0.125; r=0.0; p=0.0; a=0.0;
-    self.pubPose(x,y,z,w,r,p,a)
+    w=0.125; tx=0.0; ty=0.1; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
+    self.pubPose(w,tx,ty,tz,rx,ry,rz)
+    rospy.sleep(1.0)
+
+    w=0.125; tx=0.0; ty=0.0; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
+    self.pubPose(w,tx,ty,tz,rx,ry,rz)
     rospy.sleep(2.0)
     
-    rospy.loginfo('Sweeping roll angle from -90deg to 90deg')
+    rospy.loginfo('Sweeping rx angle (tag pitch) from -75deg to 75deg')
     for i in xrange(-10, 11):
-      x=0.0; y=0.0; z=1.0; w=0.125; r=i*7.5; p=0.0; a=0.0;
-      self.pubPose(x,y,z,w,r,p,a)
+      w=0.125; tx=0.0; ty=0.0; tz=1.0; rx=i*7.5; ry=0.0; rz=0.0;
+      self.pubPose(w,tx,ty,tz,rx,ry,rz)
       rospy.sleep(0.2)
     
     rospy.loginfo('Loading new tag')
@@ -66,29 +70,29 @@ class TagRendererNodeTester:
     self.cln_set_tag_source(req)
     rospy.sleep(2.0)
 
-    rospy.loginfo('Sweeping pitch angle from -90deg to 90deg')
+    rospy.loginfo('Sweeping ry angle (tag yaw) from -75deg to 75deg')
     for i in xrange(-10, 11):
-      x=0.0; y=0.0; z=1.0; w=0.125; r=0.0; p=i*7.5; a=0.0;
-      self.pubPose(x,y,z,w,r,p,a)
+      w=0.125; tx=0.0; ty=0.0; tz=1.0; rx=0.0; ry=i*7.5; rz=0.0;
+      self.pubPose(w,tx,ty,tz,rx,ry,rz)
       rospy.sleep(0.2)
     
-    rospy.loginfo('Sweeping yaw angle from -90deg to 90deg')
+    rospy.loginfo('Sweeping rz angle (tag roll) from -75deg to 75deg')
     for i in xrange(-10, 11):
-      x=0.0; y=0.0; z=1.0; w=0.125; r=0.0; p=20.0; a=i*7.5;
-      self.pubPose(x,y,z,w,r,p,a)
+      w=0.125; tx=0.0; ty=0.0; tz=1.0; rx=0.0; ry=0.0; rz=i*7.5;
+      self.pubPose(w,tx,ty,tz,rx,ry,rz)
       rospy.sleep(0.2)
     
     rospy.loginfo('Resetting original pose')
-    x=0.0; y=0.0; z=1.0; w=0.125; r=0.0; p=0.0; a=0.0;
-    self.pubPose(x,y,z,w,r,p,a)
+    w=0.125; tx=0.0; ty=0.0; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
+    self.pubPose(w,tx,ty,tz,rx,ry,rz)
     
     rospy.loginfo('All done')
     
     
-  def pubPose(self, x, y, z, w, r, p, a):
-    quat=tf.transformations.quaternion_from_euler(math.radians(r), math.radians(p), math.radians(a))
+  def pubPose(self, w, tx, ty, tz, rx, ry, rz):
+    quat=tf.transformations.quaternion_from_euler(math.radians(rx), math.radians(ry), math.radians(rz))
     pose_msg = TagPose()
-    pose_msg.pose.position.x=x; pose_msg.pose.position.y=y; pose_msg.pose.position.z=z;
+    pose_msg.pose.position.x=tx; pose_msg.pose.position.y=ty; pose_msg.pose.position.z=tz;
     pose_msg.width=w;
     pose_msg.pose.orientation.x=quat[0]
     pose_msg.pose.orientation.y=quat[1]

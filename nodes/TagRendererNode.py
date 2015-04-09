@@ -14,17 +14,17 @@ class TagRendererNode(TagRenderer):
   def __init__(self):
     rospy.init_node('tag_renderer_node')
     
-    scene_width_px = rospy.get_param('~scene_width_px', 640)
-    scene_height_px = rospy.get_param('~scene_height_px', 480)
-    scene_fovy_deg = rospy.get_param('~scene_fovy_deg', 60.0)
+    scene_width_px = rospy.get_param('~scene_width_px', 800)
+    scene_height_px = rospy.get_param('~scene_height_px', 600)
+    scene_fovy_deg = rospy.get_param('~scene_fovy_deg', 45.0)
     self.tag_filename = rospy.get_param('~tag_filename', '')
-    self.default_tag_x_m = rospy.get_param('~default_tag_x_m', 0.0)
-    self.default_tag_y_m = rospy.get_param('~default_tag_y_m', 0.0)
-    self.default_tag_z_m = rospy.get_param('~default_tag_z_m', 1.0)
-    self.default_tag_width_m = rospy.get_param('~default_tag_width_m', 0.1)
-    self.default_tag_roll_deg = rospy.get_param('~default_tag_roll_deg', 0.0)
-    self.default_tag_pitch_deg = rospy.get_param('~default_tag_pitch_deg', 0.0)
-    self.default_tag_yaw_deg = rospy.get_param('~default_tag_yaw_deg', 0.0)
+    self.default_tag_width_m = rospy.get_param('~default_tag_width_m', 0.125)
+    self.default_tag_tx_m = rospy.get_param('~default_tag_tx_m', 0.0)
+    self.default_tag_ty_m = rospy.get_param('~default_tag_ty_m', 0.0)
+    self.default_tag_tz_m = rospy.get_param('~default_tag_tz_m', 1.0)
+    self.default_tag_rx_deg = rospy.get_param('~default_tag_rx_deg', 0.0)
+    self.default_tag_ry_deg = rospy.get_param('~default_tag_ry_deg', 0.0)
+    self.default_tag_rz_deg = rospy.get_param('~default_tag_rz_deg', 0.0)
     TagRenderer.__init__(self, scene_width_px, scene_height_px, scene_fovy_deg, self.tag_filename)
     if len(self.tag_filename) > 0:
       rospy.loginfo('loaded tag source: %s' % self.tag_filename)
@@ -59,13 +59,13 @@ class TagRendererNode(TagRenderer):
 
     
   def resetTagPose(self):
-    self.tag_x_m = self.default_tag_x_m
-    self.tag_y_m = self.default_tag_y_m
-    self.tag_z_m = -self.default_tag_z_m # note negative z direction
     self.tag_width_m = self.default_tag_width_m
-    self.tag_pitch_deg = self.default_tag_pitch_deg # i.e. rotation about x axis
-    self.tag_yaw_deg = self.default_tag_yaw_deg     # i.e. rotation about y axis
-    self.tag_roll_deg = self.default_tag_roll_deg   # i.e. rotation about z axis
+    self.tag_tx_m = self.default_tag_tx_m
+    self.tag_ty_m = self.default_tag_ty_m
+    self.tag_tz_m = self.default_tag_tz_m
+    self.tag_rx_deg = self.default_tag_rx_deg
+    self.tag_ry_deg = self.default_tag_ry_deg
+    self.tag_rz_deg = self.default_tag_rz_deg
     self.t_first_pub = None # Force immediate redisplay+publish
 
 
@@ -79,22 +79,22 @@ class TagRendererNode(TagRenderer):
 
   def handleTagPose(self, msg):
     # note negative y & z directions (respecting right-handed coordinate frame)
-    self.tag_x_m = msg.pose.position.x
-    self.tag_y_m = -msg.pose.position.y
-    if self.tag_z_m != -msg.pose.position.z:
-      self.tag_z_m = -msg.pose.position.z
+    self.tag_tx_m = msg.pose.position.x
+    self.tag_ty_m = -msg.pose.position.y
+    if self.tag_tz_m != msg.pose.position.z:
+      self.tag_tz_m = msg.pose.position.z
       self.frustum_changed = True
     self.tag_width_m = msg.width
     
     quaternion = (msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w)
     euler = tf.transformations.euler_from_quaternion(quaternion, 'sxyz')
-    self.tag_roll_deg = math.degrees(euler[0])
-    self.tag_pitch_deg = math.degrees(euler[1])
-    self.tag_yaw_deg = math.degrees(euler[2])
+    self.tag_rx_deg = math.degrees(euler[0])
+    self.tag_ry_deg = math.degrees(euler[1])
+    self.tag_rz_deg = math.degrees(euler[2])
     
     self.t_first_pub = None # Force immediate redisplay+publish on next spinOnce
     
-    #print 'Received tag pose request: w=%.2f, xyz=(%.2f, %.2f, %.2f), rpy_deg=(%.2f, %.2f, %.2f)' % (self.tag_width_m, self.tag_x_m, self.tag_y_m, self.tag_z_m, self.tag_roll_deg, self.tag_pitch_deg, self.tag_roll_deg) # TODO: remove
+    #print 'Received tag pose request: w=%.2f, t_xyz=(%.2f, %.2f, %.2f), r_xyz_deg=(%.2f, %.2f, %.2f)' % (self.tag_width_m, self.tag_tx_m, self.tag_ty_m, self.tag_tz_m, self.tag_rx_deg, self.tag_ry_deg, self.tag_rz_deg) # TODO: remove
     
     glutPostRedisplay()
   
@@ -119,10 +119,13 @@ class TagRendererNode(TagRenderer):
   def publishBuffer(self):
     buf = glReadPixels(0, 0, self.scene_width_px, self.scene_height_px, GL_RGB, GL_UNSIGNED_BYTE)
     im_rgb_flipped = numpy.reshape(numpy.fromstring(buf, dtype=numpy.uint8), (self.scene_height_px, self.scene_width_px, 3))
-    im_rgb = cv2.flip(im_rgb_flipped, 0) # flip vertically
-    im_bgr = cv2.cvtColor(im_rgb, cv2.cv.CV_RGB2BGR)
+    im_rgb = cv2.flip(im_rgb_flipped, 0) # glReadPixels reads image upside-down, so flip vertically
     
-    im_msg = self.bridge.cv2_to_imgmsg(im_bgr, 'bgr8')
+    #im_bgr = cv2.cvtColor(im_rgb, cv2.cv.CV_RGB2BGR) # OpenCV uses BGR representation internally, so we need to convert if want to display/imwrite image using OpenCV
+    #im_msg = self.bridge.cv2_to_imgmsg(im_bgr, 'bgr8')
+    
+    im_msg = self.bridge.cv2_to_imgmsg(im_rgb, 'rgb8')
+    
     self.pub_image_raw.publish(im_msg)
     
     info = CameraInfo()
