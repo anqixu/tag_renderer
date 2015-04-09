@@ -8,11 +8,14 @@ from tag_renderer.msg import TagPose
 from tag_renderer.srv import SetSceneViewport, SetTagSource, SetSceneViewportResponse, SetTagSourceResponse
 from cv_bridge import CvBridge
 import tf
+import signal
 
 
 class TagRendererNode(TagRenderer):
   def __init__(self):
-    rospy.init_node('tag_renderer_node')
+    rospy.init_node('tag_renderer_node', disable_signals=True)
+    signal.signal(signal.SIGINT, self.handleSigint)
+    signal.signal(signal.SIGTERM, self.handleSigint)
     
     scene_width_px = rospy.get_param('~scene_width_px', 800)
     scene_height_px = rospy.get_param('~scene_height_px', 600)
@@ -56,7 +59,11 @@ class TagRendererNode(TagRenderer):
   def shutdown(self):
     rospy.signal_shutdown('Shutdown requested by user')
     glutLeaveMainLoop()
-
+    
+    
+  def handleSigint(self, signum, frame):
+    self.shutdown()
+    
     
   def resetTagPose(self):
     self.tag_width_m = self.default_tag_width_m
@@ -185,5 +192,5 @@ if __name__ == "__main__":
   try:
     node = TagRendererNode()
     node.spin()
-  except rospy.ROSInterruptException:
-    pass
+  except rospy.ROSInterruptException, KeyboardInterrupt:
+    node.shutdown()

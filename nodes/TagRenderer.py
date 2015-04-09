@@ -182,17 +182,17 @@ class TagRenderer:
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) # Clear color and depth buffers
     
     # Wrap angles
-    while self.tag_rx_deg < 0:
+    while self.tag_rx_deg <= -180.0:
       self.tag_rx_deg += 360.0
-    while self.tag_rx_deg >= 360.0:
+    while self.tag_rx_deg > 180.0:
       self.tag_rx_deg -= 360.0
-    while self.tag_ry_deg < 0:
+    while self.tag_ry_deg <= -180.0:
       self.tag_ry_deg += 360.0
-    while self.tag_ry_deg >= 360.0:
+    while self.tag_ry_deg > 180.0:
       self.tag_ry_deg -= 360.0
-    while self.tag_rz_deg < 0:
+    while self.tag_rz_deg <= -180.0:
       self.tag_rz_deg += 360.0
-    while self.tag_rz_deg >= 360.0:
+    while self.tag_rz_deg > 180.0:
       self.tag_rz_deg -= 360.0
 
     # Apply translation and rotation to GL_MODELVIEW
