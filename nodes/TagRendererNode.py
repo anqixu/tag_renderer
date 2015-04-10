@@ -44,6 +44,8 @@ class TagRendererNode(TagRenderer):
     self.republish_delay_sec = rospy.get_param('~republish_delay_sec', -1) # < 0: do not republish; else: republish (at least) every N secs if possible
     
     self.enable_key_ctrls = rospy.get_param('~enable_key_ctrls', False) # If true, can translate/rotate/debug scene with various keys (see TagRenderer.handleKeyCB)
+    
+    self.publish_after_source_change = rospy.get_param('~publish_after_source_change', True)
 
     self.postDrawCB = self.publishBuffer
     self.pub_image_raw = rospy.Publisher('~image_raw', Image, queue_size=10)
@@ -87,7 +89,7 @@ class TagRendererNode(TagRenderer):
   def handleTagPose(self, msg):
     # note negative y & z directions (respecting right-handed coordinate frame)
     self.tag_tx_m = msg.pose.position.x
-    self.tag_ty_m = -msg.pose.position.y
+    self.tag_ty_m = msg.pose.position.y
     if self.tag_tz_m != msg.pose.position.z:
       self.tag_tz_m = msg.pose.position.z
       self.frustum_changed = True
@@ -169,7 +171,8 @@ class TagRendererNode(TagRenderer):
       self.loadTexture(self.tag_filename)
       rospy.loginfo('updated tag source: %s' % self.tag_filename)
       self.update_tag_source_req = None
-      self.t_first_pub = None # force immediate redisplay
+      if self.publish_after_source_change:
+        self.t_first_pub = None # force immediate redisplay
     
     now = rospy.Time.now()
     t_first_pub = self.t_first_pub
