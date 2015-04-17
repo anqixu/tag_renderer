@@ -8,7 +8,6 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   geometry_msgs
   sensor_msgs
-  tf
   cv_bridge
 )
 
@@ -41,7 +40,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES ftag2_core
-  CATKIN_DEPENDS roscpp rospy message_runtime std_msgs geometry_msgs sensor_msgs tf cv_bridge
+  CATKIN_DEPENDS roscpp rospy message_runtime std_msgs geometry_msgs sensor_msgs cv_bridge
 #  DEPENDS system_lib
 )
 
