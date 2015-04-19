@@ -31,7 +31,7 @@ class TagRendererNodeTester:
 
     rospy.loginfo('Resetting original tag')
     msg = String()
-    msg.data = '%s/nodes/ftag2_6s2f22b_20_00_03_13_30_21.png' % (tag_renderer_dir)
+    msg.data = '%s/nodes/ftag2_6s2f22b_33_00_13_00_33_20.png' % (tag_renderer_dir)
     self.pub_set_tag_source.publish(msg)
     rospy.sleep(2.0)
 
@@ -66,7 +66,7 @@ class TagRendererNodeTester:
     rospy.loginfo('Loading new tag')
     rospy.sleep(2.0)
     req = SetTagSourceRequest()
-    req.filename = '%s/nodes/ftag2_6s5f33322b_40024_05244_07424_37762_66560_67520.png' % (tag_renderer_dir)
+    req.filename = '%s/nodes/ftag2_6s2f22b_30_00_10_12_31_22.png' % (tag_renderer_dir)
     self.cln_set_tag_source(req)
     rospy.sleep(2.0)
 

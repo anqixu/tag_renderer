@@ -2,7 +2,7 @@
   <arg name="cam_name" value="camera" />
 
   <node pkg="tag_renderer" type="TagRendererNode.py" name="tag_renderer_node" output="screen">
-    <param name="tag_filename" value="$(find tag_renderer)/nodes/ftag2_6s2f22b_20_00_03_13_30_21.png" />
+    <param name="tag_filename" value="$(find tag_renderer)/nodes/ftag2_6s2f22b_33_00_13_00_33_20.png" />
 
     <param name="scene_width_px" value="800" />
     <param name="scene_height_px" value="600" />

@@ -369,7 +369,7 @@ if __name__ == "__main__":
   width = 800
   height = 600
   fovy = 45.0
-  tag_filename = "ftag2_6s2f22b_20_00_03_13_30_21.png"
+  tag_filename = "ftag2_6s2f22b_30_00_10_12_31_22.png"
   
   renderer = TagRenderer(width, height, fovy, tag_filename)
   renderer.postDrawCB = renderer.saveBuffer
