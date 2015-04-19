@@ -66,6 +66,7 @@ class TagRenderer:
     self.postDrawCB = None
     self.resetTagPose()
     self.frustum_changed = False
+    self.debug_key_small_incr = False
 
     glutInitDisplayMode(GLUT_SINGLE | GLUT_RGB | GLUT_DEPTH)
   
@@ -273,51 +274,57 @@ class TagRenderer:
     if key == '\033' or key == 'x': # ESC or x
       self.shutdown()
     elif key == '4':
-      self.tag_tx_m -= 0.1
+      self.tag_tx_m -= 0.01 if self.debug_key_small_incr else 0.1
     elif key == '6':
-      self.tag_tx_m += 0.1
+      self.tag_tx_m += 0.01 if self.debug_key_small_incr else 0.1
     elif key == '8':
-      self.tag_ty_m -= 0.1
+      self.tag_ty_m -= 0.01 if self.debug_key_small_incr else 0.1
     elif key == '2':
-      self.tag_ty_m += 0.1
+      self.tag_ty_m += 0.01 if self.debug_key_small_incr else 0.1
     elif key == '3':
-      self.tag_tz_m -= 0.1
+      self.tag_tz_m -= 0.01 if self.debug_key_small_incr else 0.1
       self.frustum_changed = True
     elif key == '9':
-      self.tag_tz_m += 0.1
+      self.tag_tz_m += 0.01 if self.debug_key_small_incr else 0.1
       self.frustum_changed = True
     elif key == 'p':
-      self.tag_rx_deg += 15.0
+      self.tag_rx_deg += 1.0 if self.debug_key_small_incr else 15.0
     elif key == 'P':
-      self.tag_rx_deg -= 15.0
+      self.tag_rx_deg -= 1.0 if self.debug_key_small_incr else 15.0
     elif key == 'y':
-      self.tag_ry_deg += 15.0
+      self.tag_ry_deg += 1.0 if self.debug_key_small_incr else 15.0
     elif key == 'Y':
-      self.tag_ry_deg -= 15.0
+      self.tag_ry_deg -= 1.0 if self.debug_key_small_incr else 15.0
     elif key == 'r':
-      self.tag_rz_deg += 15.0
+      self.tag_rz_deg += 1.0 if self.debug_key_small_incr else 15.0
     elif key == 'R':
-      self.tag_rz_deg -= 15.0
+      self.tag_rz_deg -= 1.0 if self.debug_key_small_incr else 15.0
+    elif key == '*':
+      self.tag_width_m *= 1.1 if self.debug_key_small_incr else 2.0
+      self.frustum_changed = True
+    elif key == '/':
+      self.tag_width_m /= 1.1 if self.debug_key_small_incr else 2.0
+      self.frustum_changed = True
     elif key == '+':
-      self.tag_width_m *= 2.0
-      self.frustum_changed = True
+      self.debug_key_small_incr = False
+      print 'Key toggle increment: LARGE\n'
     elif key == '-':
-      self.tag_width_m /= 2.0
-      self.frustum_changed = True
+      self.debug_key_small_incr = True
+      print 'Key toggle increment: SMALL\n'
     elif key == '5':
       self.resetTagPose()
       self.frustum_changed = True
     elif key == ' ': # Display current tag pose
       print ''
-      print "----------"
-      print "Scene W/H: %3d %3d" % (self.scene_width_px, self.scene_height_px)
-      print "Vert FOV : %2.2f" % self.scene_fovy_deg
+      print '----------'
+      print 'Scene W/H: %3d %3d' % (self.scene_width_px, self.scene_height_px)
+      print 'Vert FOV : %2.2f' % self.scene_fovy_deg
       if self.tag_texture is not None:
-        print "Tag T X/Y/Z: %2.2f %2.2f %2.2f" % (self.tag_tx_m, self.tag_ty_m, self.tag_tz_m)
-        print "  Rot X/Y/Z: %3.2f %3.2f %3.2f" % (self.tag_rx_deg, self.tag_ry_deg, self.tag_rz_deg)
-        print "Tag Width: %.2f" % self.tag_width_m
+        print 'Tag T X/Y/Z: %2.2f %2.2f %2.2f' % (self.tag_tx_m, self.tag_ty_m, self.tag_tz_m)
+        print '  Rot X/Y/Z: %3.2f %3.2f %3.2f' % (self.tag_rx_deg, self.tag_ry_deg, self.tag_rz_deg)
+        print 'Tag Width: %.2f' % self.tag_width_m
       else:
-        print "No Tag"
+        print 'No Tag'
       print ''
       
       refresh_scene = False
@@ -369,7 +376,7 @@ if __name__ == "__main__":
   width = 800
   height = 600
   fovy = 45.0
-  tag_filename = "ftag2_6s2f22b_30_00_10_12_31_22.png"
+  tag_filename = "ftag2_6s2f22b_30_00_20_22_31_12.png"
   
   renderer = TagRenderer(width, height, fovy, tag_filename)
   renderer.postDrawCB = renderer.saveBuffer

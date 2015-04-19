@@ -2,7 +2,7 @@
   <arg name="cam_name" value="camera" />
 
   <node pkg="tag_renderer" type="TagRendererNode.py" name="tag_renderer_node" output="screen">
-    <param name="tag_filename" value="$(find tag_renderer)/nodes/ftag2_6s2f22b_33_00_13_00_33_20.png" />
+    <param name="tag_filename" value="$(find tag_renderer)/nodes/ftag2_6s2f22b_33_00_23_00_33_10.png" />
 
     <param name="scene_width_px" value="800" />
     <param name="scene_height_px" value="600" />
@@ -12,9 +12,9 @@
     <param name="default_tag_y_m" value="0.0" />
     <param name="default_tag_z_m" value="1.0" />
     <param name="default_tag_width_m" value="0.125" /> <!-- note: account for tag image border manually here -->
-    <param name="default_tag_roll_deg" value="0.0" />
-    <param name="default_tag_pitch_deg" value="0.0" />
-    <param name="default_tag_yaw_deg" value="0.0" />
+    <param name="default_tag_rx_deg" value="0.0" />
+    <param name="default_tag_ry_deg" value="0.0" />
+    <param name="default_tag_rz_deg" value="0.0" />
     
     <param name="republish_delay_sec" value="0" /> <!-- republish as fast as possible -->
     <param name="republish_delay_sec" value="-1" /> <!-- do not republish -->
