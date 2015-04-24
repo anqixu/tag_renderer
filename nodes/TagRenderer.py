@@ -148,7 +148,8 @@ class TagRenderer:
   def initGL(self):
     glEnable(GL_CULL_FACE) # Use single-faced geometry (front- & back-face culling) to display white tag back
 
-    glClearColor(0.0, 0.0, 0.0, 0.0) # Set black background
+    #glClearColor(0.0, 0.0, 0.0, 0.0) # Set black background
+    glClearColor(1.0, 1.0, 1.0, 0.0) # Set white background
     
     glClearDepth(1.0) # Enable clearing of depth filter
     glEnable(GL_DEPTH_TEST) # Enable depth testing
