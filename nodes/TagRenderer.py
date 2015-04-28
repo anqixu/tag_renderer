@@ -221,11 +221,11 @@ class TagRenderer:
       glDisable(GL_TEXTURE_2D)
       #glDisable(GL_CULL_FACE)
 
-      # Render back-side of tag (as white)
+      # Render back-side of tag (as near-white)
       glCullFace(GL_FRONT)
       #glEnable(GL_CULL_FACE)
       glBegin(GL_QUADS)
-      glColor3f(1.0, 1.0, 1.0)
+      glColor3f(0.9, 0.9, 0.9)
       glVertex3f(-0.5, -0.5,  0.0)  # Bottom-left of texture
       glVertex3f( 0.5, -0.5,  0.0)  # Bottom-right of texture
       glVertex3f( 0.5,  0.5,  0.0)  # Top-right of texture
@@ -234,7 +234,7 @@ class TagRenderer:
     else:
       glDisable(GL_CULL_FACE)
       glBegin(GL_QUADS)
-      glColor3f(1.0, 1.0, 1.0)
+      glColor3f(0.9, 0.9, 0.9)
       glVertex3f(-0.5, -0.5,  0.0)  # Bottom-left of texture
       glVertex3f( 0.5, -0.5,  0.0)  # Bottom-right of texture
       glVertex3f( 0.5,  0.5,  0.0)  # Top-right of texture
