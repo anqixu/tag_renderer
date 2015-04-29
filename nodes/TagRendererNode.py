@@ -21,7 +21,7 @@ class TagRendererNode(TagRenderer):
     scene_height_px = rospy.get_param('~scene_height_px', 600)
     scene_fovy_deg = rospy.get_param('~scene_fovy_deg', 45.0)
     self.tag_filename = rospy.get_param('~tag_filename', '')
-    self.default_tag_width_m = rospy.get_param('~default_tag_width_m', 0.125)
+    self.default_tag_width_m = rospy.get_param('~default_tag_width_m', 0.1)
     self.default_tag_tx_m = rospy.get_param('~default_tag_tx_m', 0.0)
     self.default_tag_ty_m = rospy.get_param('~default_tag_ty_m', 0.0)
     self.default_tag_tz_m = rospy.get_param('~default_tag_tz_m', 1.0)
@@ -103,8 +103,6 @@ class TagRendererNode(TagRenderer):
     
     self.t_first_pub = None # Force immediate redisplay+publish on next spinOnce
     
-    #print 'Received tag pose request: w=%.2f, t_xyz=(%.2f, %.2f, %.2f), r_xyz_deg=(%.2f, %.2f, %.2f)' % (self.tag_width_m, self.tag_tx_m, self.tag_ty_m, self.tag_tz_m, self.tag_rx_deg, self.tag_ry_deg, self.tag_rz_deg) # TODO: remove
-    
     glutPostRedisplay()
   
   
@@ -114,7 +112,6 @@ class TagRendererNode(TagRenderer):
 
     
   def handleSetTagSource(self, req):
-    #print 'Received tag source request:', req.filename # TODO: remove
     self.update_tag_source_req = req # Postpone loading texture till on main (GL) thread's render context
     return SetTagSourceResponse()
 
@@ -122,7 +119,6 @@ class TagRendererNode(TagRenderer):
   def handleSetTagSourceMsg(self, msg):
     self.update_tag_source_req = SetTagSource() # Postpone loading texture till on main (GL) thread's render context
     self.update_tag_source_req.filename = msg.data
-    #print 'Received tag source msg request:', msg.data # TODO: remove
 
 
   def publishBuffer(self):

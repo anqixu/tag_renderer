@@ -89,11 +89,12 @@ class TagRenderer:
   def shutdown(self):
     glutLeaveMainLoop()
 
+
   def resetTagPose(self):
     self.tag_tx_m = 0.0 # +x: move tag towards left (tag seen as moving towards right from camera view)
     self.tag_ty_m = 0.0 # +y: move tag towards down (tag seen as moving towards down from camera view)
     self.tag_tz_m = 1.0 # +z: move tag away (tag seen as moving away from camera view)
-    self.tag_width_m = 0.125
+    self.tag_width_m = 0.1
     self.tag_rx_deg = 0.0 # i.e. rotation about x axis, in camera/fixed/world frame
     self.tag_ry_deg = 0.0 # i.e. rotation about y axis, in camera/fixed/world frame
     self.tag_rz_deg = 0.0 # i.e. rotation about z axis, in camera/fixed/world frame
@@ -377,7 +378,7 @@ if __name__ == "__main__":
   width = 800
   height = 600
   fovy = 45.0
-  tag_filename = "ftag2_6s2f22b_30_00_20_22_31_12.png"
+  tag_filename = "ftag2_6s2f22b_13_23_00_23_11_13.png"
   
   renderer = TagRenderer(width, height, fovy, tag_filename)
   renderer.postDrawCB = renderer.saveBuffer

@@ -31,35 +31,35 @@ class TagRendererNodeTester:
 
     rospy.loginfo('Resetting original tag')
     msg = String()
-    msg.data = '%s/nodes/ftag2_6s2f22b_33_00_23_00_33_10.png' % (tag_renderer_dir)
+    msg.data = '%s/nodes/ftag2_6s2f22b_13_23_00_23_11_13.png' % (tag_renderer_dir)
     self.pub_set_tag_source.publish(msg)
     rospy.sleep(2.0)
 
     rospy.loginfo('Moving tag in quad')
 
-    w=0.125; tx=0.0; ty=0.0; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
+    w=0.1; tx=0.0; ty=0.0; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
     self.pubPose(w,tx,ty,tz,rx,ry,rz)
     rospy.sleep(1.0)
 
-    w=0.125; tx=0.1; ty=0.0; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
+    w=0.1; tx=0.1; ty=0.0; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
     self.pubPose(w,tx,ty,tz,rx,ry,rz)
     rospy.sleep(1.0)
 
-    w=0.125; tx=0.1; ty=0.1; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
+    w=0.1; tx=0.1; ty=0.1; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
     self.pubPose(w,tx,ty,tz,rx,ry,rz)
     rospy.sleep(1.0)
 
-    w=0.125; tx=0.0; ty=0.1; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
+    w=0.1; tx=0.0; ty=0.1; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
     self.pubPose(w,tx,ty,tz,rx,ry,rz)
     rospy.sleep(1.0)
 
-    w=0.125; tx=0.0; ty=0.0; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
+    w=0.1; tx=0.0; ty=0.0; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
     self.pubPose(w,tx,ty,tz,rx,ry,rz)
     rospy.sleep(2.0)
     
     rospy.loginfo('Sweeping rx angle (tag pitch) from -75deg to 75deg')
     for i in xrange(-10, 11):
-      w=0.125; tx=0.0; ty=0.0; tz=1.0; rx=i*7.5; ry=0.0; rz=0.0;
+      w=0.1; tx=0.0; ty=0.0; tz=1.0; rx=i*7.5; ry=0.0; rz=0.0;
       self.pubPose(w,tx,ty,tz,rx,ry,rz)
       rospy.sleep(0.2)
     
@@ -72,18 +72,18 @@ class TagRendererNodeTester:
 
     rospy.loginfo('Sweeping ry angle (tag yaw) from -75deg to 75deg')
     for i in xrange(-10, 11):
-      w=0.125; tx=0.0; ty=0.0; tz=1.0; rx=0.0; ry=i*7.5; rz=0.0;
+      w=0.1; tx=0.0; ty=0.0; tz=1.0; rx=0.0; ry=i*7.5; rz=0.0;
       self.pubPose(w,tx,ty,tz,rx,ry,rz)
       rospy.sleep(0.2)
     
     rospy.loginfo('Sweeping rz angle (tag roll) from -75deg to 75deg')
     for i in xrange(-10, 11):
-      w=0.125; tx=0.0; ty=0.0; tz=1.0; rx=0.0; ry=0.0; rz=i*7.5;
+      w=0.1; tx=0.0; ty=0.0; tz=1.0; rx=0.0; ry=0.0; rz=i*7.5;
       self.pubPose(w,tx,ty,tz,rx,ry,rz)
       rospy.sleep(0.2)
     
     rospy.loginfo('Resetting original pose')
-    w=0.125; tx=0.0; ty=0.0; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
+    w=0.1; tx=0.0; ty=0.0; tz=1.0; rx=0.0; ry=0.0; rz=0.0;
     self.pubPose(w,tx,ty,tz,rx,ry,rz)
     
     rospy.loginfo('All done')
