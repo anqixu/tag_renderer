@@ -329,7 +329,7 @@ class TagRenderer:
         print 'No Tag'
       print ''
       
-      refresh_scene = False
+      refresh_scene = True
 
     else:
       print 'Unrecognized key:', key

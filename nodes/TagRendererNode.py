@@ -165,7 +165,7 @@ class TagRendererNode(TagRenderer):
       req = self.update_tag_source_req
       self.tag_filename = req.filename
       self.loadTexture(self.tag_filename)
-      rospy.loginfo('updated tag source: %s' % self.tag_filename)
+      rospy.logdebug('updated tag source: %s' % self.tag_filename)
       self.update_tag_source_req = None
       if self.publish_after_source_change:
         self.t_first_pub = None # force immediate redisplay

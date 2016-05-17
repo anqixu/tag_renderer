@@ -11,22 +11,22 @@ import math
 # sprintf('tag_source = "%s"\ntag_width_m = 0.1\nif True:\n  tag_tx_m = %.8f\n  tag_ty_m = %.8f\n  tag_tz_m = %.8f\n  tag_rx_deg = %.8f\n  tag_ry_deg = %.8f\n  tag_rz_deg = %.8f\nelse:\n  tag_tx_m = %.8f\n  tag_ty_m = %.8f\n  tag_tz_m = %.8f\n  tag_rx_deg = %.8f\n  tag_ry_deg = %.8f\n  tag_rz_deg = %.8f\n', ps.tag_source, ps.tag_tx_m, ps.tag_ty_m, ps.tag_tz_m, ps.tag_rx_deg, ps.tag_ry_deg, ps.tag_rz_deg, ps.ftag2_tx_m, ps.ftag2_ty_m, ps.ftag2_tz_m, ps.ftag2_rx_deg, ps.ftag2_ry_deg, ps.ftag2_rz_deg)
 
 
-tag_source = "/home/thalassa/anqixu/indigo_ws/1_ftag/src/ftag2test/ftag2_datasets/6S2F22B_manual_set/ftag2_6s2f22b_10_00_00_00_10_10.png"
+tag_source = "/home/thalassa/anqixu/indigo_ws/1_ftag/src/ftag2test/ftag2_datasets/6S5F22111B_manual_set/ftag2_6s5f22111b_10000_00000_00000_00000_10000_10000.png"
 tag_width_m = 0.1
 if True:
-  tag_tx_m = -0.501575787893947
-  tag_ty_m = 0
-  tag_tz_m = 1
-  tag_rx_deg = 0
-  tag_ry_deg = 0
-  tag_rz_deg = 0
+  tag_tx_m = 0.00000000
+  tag_ty_m = 0.00000000
+  tag_tz_m = 2.19489489
+  tag_rx_deg = 0.00000000
+  tag_ry_deg = 0.00000000
+  tag_rz_deg = 0.00000000
 else:
-  tag_tx_m = -0.04716751
-  tag_ty_m = -0.23768370
-  tag_tz_m = 1.34403484
-  tag_rx_deg = 6.90277628
-  tag_ry_deg = 39.70618498
-  tag_rz_deg = 151.24731178
+  tag_tx_m = -0.00312500
+  tag_ty_m = 0.00000000
+  tag_tz_m = 2.26332521
+  tag_rx_deg = 0.00000000
+  tag_ry_deg = 0.00000000
+  tag_rz_deg = 0.00000000
 
 
 
